@@ -7,21 +7,16 @@
         <generator>Hugo -- gohugo.io</generator>
         <language>zh-cn</language>
         <copyright>CY1218-coder</copyright>
-        <lastBuildDate>Fri, 13 Nov 2026 23:22:19 +0800</lastBuildDate><atom:link href="https://CY1218-coder.github.io/index.xml" rel="self" type="application/rss+xml" /><item>
-        <title>Test</title>
-        <link>https://CY1218-coder.github.io/p/test/</link>
-        <pubDate>Fri, 13 Nov 2026 23:22:19 +0800</pubDate>
+        <lastBuildDate>Sat, 14 Nov 2026 10:10:00 +0800</lastBuildDate><atom:link href="https://CY1218-coder.github.io/index.xml" rel="self" type="application/rss+xml" /><item>
+        <title>LeetCode</title>
+        <link>https://CY1218-coder.github.io/p/leetcode/</link>
+        <pubDate>Sat, 14 Nov 2026 10:10:00 +0800</pubDate>
         
-        <guid>https://CY1218-coder.github.io/p/test/</guid>
-        <description></description>
-        </item>
-        <item>
-        <title>MyFirstBlog</title>
-        <link>https://CY1218-coder.github.io/p/myfirstblog/</link>
-        <pubDate>Fri, 13 Nov 2026 20:31:54 +0800</pubDate>
-        
-        <guid>https://CY1218-coder.github.io/p/myfirstblog/</guid>
-        <description></description>
+        <guid>https://CY1218-coder.github.io/p/leetcode/</guid>
+        <description>&lt;h1 id=&#34;leetcode&#34;&gt;LeetCode
+&lt;/h1&gt;&lt;h2 id=&#34;二分&#34;&gt;二分
+&lt;/h2&gt;&lt;h2 id=&#34;动态规划&#34;&gt;动态规划
+&lt;/h2&gt;</description>
         </item>
         <item>
         <title>归档</title>
