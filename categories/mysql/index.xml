@@ -72,8 +72,6 @@
 	srcset=&#34;https://CY1218-coder.github.io/p/mysql/20261114001_hu1784083012333640493.png 480w, https://CY1218-coder.github.io/p/mysql/20261114001_hu7482345856115681778.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
-		alt=&#34;执行一条 SQL select语句，期间发生了什么？&#34;
-	
 	
 		class=&#34;gallery-image&#34; 
 		data-flex-grow=&#34;174&#34;
@@ -121,10 +119,202 @@ InnoDB 提供了 4 种行格式，分别是　Redundant　Compact　Dynamic　Co
 		data-flex-grow=&#34;834&#34;
 		data-flex-basis=&#34;2003px&#34;
 	
-&gt;&lt;/p&gt;
+&gt;
+变长字段长度列表：&lt;br&gt;
+　　例如，char 是定长的，varchar 是变长的，变长字段实际存储的数据的长度（大小）不固定的。&lt;br&gt;
+　　所以，在存储数据的时候，也要把数据占用的大小存起来，存到　变长字段长度列表　里面。&lt;br&gt;
+　　读取数据的时候才能根据这个　变长字段长度列表　去读取对应长度的数据。&lt;br&gt;
+　　其他 TEXT、BLOB 等变长字段也是这么实现的。&lt;br&gt;
+　　当数据表中没有变长字段时，比如所有字段都是 int 类型的数据，此时，表中的行格式就不会包含。&lt;br&gt;
+　　因为没有必要存储这部分信息，所以可以将这部分内容删除以节省空间。&lt;br&gt;
+　　因此，　变长字段长度列表　只会在数据表存在变长字段时才会出现。&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;NULL 值列表：&lt;br&gt;
+　　表中的某些列可能会存储 NULL 值，如果把这些 NULL 值都放到记录的真实数据中会比较浪费空间，所以 Compact 行格式把这些值为 NULL 的列存储到 NULL值列表中。&lt;br&gt;
+　　NULL 值列表也不是必须的。当数据表的字段都定义成 NOT NULL 的时候，这时候表里的行格式就不会有 NULL 值列表了。&lt;br&gt;
+　　如果存在允许 NULL 值的列，则每个列对应一个二进制位（bit）。&lt;br&gt;
+　　二进制位的值为 1 时，代表该列的值为NULL。&lt;br&gt;
+　　二进制位的值为 0 时，代表该列的值不为NULL。&lt;br&gt;
+　　所以在设计数据库表的时候，通常都是建议将字段设置为 NOT NULL，这样可以至少节省 1 字节的空间（NULL 值列表至少占用 1 字节空间）。&lt;br&gt;
+　　NULL 值列表　的空间不是固定 1 字节的。当一条记录有 9 个字段值都是 NULL，那么就会创建 2 字节空间的 NULL 值列表，以此类推。&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;记录头信息：&lt;br&gt;
+　　delete_mask：标识此条数据是否被删除。从这里可以知道，我们执行 detele 删除记录的时候，并不会真正的删除记录，只是将这个记录的 delete_mask 标记为 1。&lt;br&gt;
+　　next_record：下一条记录的位置。从这里可以知道，记录与记录之间是通过链表组织的。在前面我也提到了，指向的是下一条记录的 记录头信息 和 真实数据 之间的位置，这样的好处是向左读就是记录头信息，向右读就是真实数据，比较方便。&lt;br&gt;
+　　record_type：表示当前记录的类型，0表示普通记录，1表示B+树非叶子节点记录，2表示最小记录，3表示最大记录。&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;row_id：&lt;br&gt;
+　　如果我们建表的时候指定了主键或者唯一约束列，那么就没有 row_id 隐藏字段了。&lt;br&gt;
+　　如果既没有指定主键，又没有唯一约束，那么 InnoDB 就会为记录添加 row_id 隐藏字段。&lt;br&gt;
+　　row_id不是必需的，占用 6 个字节。&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;trx_id：&lt;br&gt;
+　　事务id，表示这个数据是由哪个事务生成的。&lt;br&gt;
+　　trx_id是必需的，占用 6 个字节。&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;roll_pointer：&lt;br&gt;
+　　这条记录上一个版本的指针。roll_pointer 是必需的，占用 7 个字节。&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;varchar(n) 中 n 最大取值为多少？&lt;br&gt;
+　　MySQL 规定除了 TEXT、BLOBs 这种大对象类型之外，其他所有的列（不包括隐藏列和记录头信息）占用的字节长度加起来不能超过 65535 个字节。&lt;br&gt;
+　　varchar(n) 字段类型的 n 代表的是最多存储的字符数量，并不是字节大小。&lt;br&gt;
+　　因为字符集代表着，1个字符要占用多少字节，比如 ascii 字符集，1 个字符占用 1 字节。&lt;br&gt;
+　　存储字段类型为 varchar(n) 的数据时，其实分成了三个部分来存储：&lt;br&gt;
+　　　　真实数据 + 变长字段长度列表 + NULL值列表&lt;br&gt;
+　　单字段的情况下：&lt;br&gt;
+　　　　计算　NOT NULL：n = (65535B-2B)/1B = 65533&lt;br&gt;
+　　　　计算　NULL：n = (65535B-2B-1B)/1B  = 65532&lt;br&gt;
+　　多字段的情况：&lt;br&gt;
+　　　　所有字段的长度 + 变长字段字节数列表所占用的字节数 + NULL值列表所占用的字节数 &amp;lt;= 65535。&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;行溢出后，MySQL 是怎么处理的？&lt;br&gt;
+　　MySQL 中磁盘和内存交互的基本单位是页，一个页的大小一般是 16KB，也就是 16384字节，而一个 varchar(n) 类型的列最多可以存储 65533字节，&lt;br&gt;
+　　一些大对象如 TEXT、BLOB 可能存储更多的数据，这时一个页可能就存不了一条记录。这个时候就会发生行溢出，多的数据就会存到另外的「溢出页」中。&lt;br&gt;
+　　如果一个数据页存不了一条记录，InnoDB 存储引擎会自动将溢出的数据存放到「溢出页」中。&lt;br&gt;
+　　在一般情况下，InnoDB 的数据都是存放在「数据页」中。但是当发生行溢出时，溢出的数据会存放到「溢出页」中。&lt;br&gt;
+　　当发生行溢出时，在记录的真实数据处只会保存该列的一部分数据，而把剩余的数据放在「溢出页」中，然后真实数据处用 20 字节存储指向溢出页的地址，从而可以找到剩余数据所在的页。大致如下图所示。
+　　&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql/20261115001.png&#34;
+	width=&#34;1016&#34;
+	height=&#34;336&#34;
+	srcset=&#34;https://CY1218-coder.github.io/p/mysql/20261115001_hu5787002720839823103.png 480w, https://CY1218-coder.github.io/p/mysql/20261115001_hu4676878817637581711.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;302&#34;
+		data-flex-basis=&#34;725px&#34;
+	
+&gt;
+　　上面这个是 Compact 行格式在发生行溢出后的处理。&lt;br&gt;&lt;/p&gt;
 &lt;hr&gt;
 &lt;h2 id=&#34;索引篇&#34;&gt;索引篇
-&lt;/h2&gt;&lt;hr&gt;
+&lt;/h2&gt;&lt;h3 id=&#34;什么是索引&#34;&gt;什么是索引
+&lt;/h3&gt;&lt;p&gt;　　数据库中，索引的定义就是帮助存储引擎快速获取数据的一种数据结构，索引是数据的目录。&lt;br&gt;
+　　存储引擎是如何存储数据、如何为存储的数据建立索引和如何更新、查询数据等技术的实现方法。&lt;br&gt;
+　　MySQL存储引擎有 MyISAM、InnoDB、Memory，其中 InnoDB 是在MySQL5.5之后成为默认存储引擎。&lt;br&gt;
+　　下图是 MySQL 的结构图，索引和数据就是位于存储引擎中：&lt;br&gt;
+　　　　&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql/20261115002.png&#34;
+	width=&#34;448&#34;
+	height=&#34;476&#34;
+	srcset=&#34;https://CY1218-coder.github.io/p/mysql/20261115002_hu8859934550751649802.png 480w, https://CY1218-coder.github.io/p/mysql/20261115002_hu2072215742835062824.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;94&#34;
+		data-flex-basis=&#34;225px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;h3 id=&#34;索引的作用&#34;&gt;索引的作用
+&lt;/h3&gt;&lt;p&gt;&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql/20261115003.png&#34;
+	width=&#34;1846&#34;
+	height=&#34;238&#34;
+	srcset=&#34;https://CY1218-coder.github.io/p/mysql/20261115003_hu18242269229931401504.png 480w, https://CY1218-coder.github.io/p/mysql/20261115003_hu9430353459181652789.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;775&#34;
+		data-flex-basis=&#34;1861px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;h3 id=&#34;索引的类型&#34;&gt;索引的类型
+&lt;/h3&gt;&lt;p&gt;&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql/20261115004.png&#34;
+	width=&#34;624&#34;
+	height=&#34;528&#34;
+	srcset=&#34;https://CY1218-coder.github.io/p/mysql/20261115004_hu15173686597823716232.png 480w, https://CY1218-coder.github.io/p/mysql/20261115004_hu8002781579875122825.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;118&#34;
+		data-flex-basis=&#34;283px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;h4 id=&#34;按照数据结构分类&#34;&gt;按照数据结构分类
+&lt;/h4&gt;&lt;p&gt;InnoDB 是在 MySQL 5.5 之后成为默认的 MySQL 存储引擎，B+Tree 索引类型也是 MySQL 存储引擎采用最多的索引类型。&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;在创建表时，InnoDB 存储引擎会根据不同的场景选择不同的列作为索引：&lt;br&gt;
+　　如果有主键，默认会使用主键作为聚簇索引的索引键（key）；&lt;br&gt;
+　　如果没有主键，就选择第一个不包含 NULL 值的唯一列作为聚簇索引的索引键（key）；&lt;br&gt;
+　　在上面两个都没有的情况下，InnoDB 将自动生成一个隐式自增 id 列作为聚簇索引的索引键（key）；&lt;br&gt;
+其它索引都属于二级索引。创建的聚簇索引和二级索引默认使用的是 B+Tree 索引。&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;模拟 B+Tree 索引在存储数据中的具体实现。&lt;br&gt;
+　　聚簇索引　二级索引
+&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql/20261115005.png&#34;
+	width=&#34;2026&#34;
+	height=&#34;967&#34;
+	srcset=&#34;https://CY1218-coder.github.io/p/mysql/20261115005_hu10609524405539797025.png 480w, https://CY1218-coder.github.io/p/mysql/20261115005_hu16820810810421390261.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;209&#34;
+		data-flex-basis=&#34;502px&#34;
+	
+&gt;&lt;br&gt;
+　　回表查询
+&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql/20261115006.png&#34;
+	width=&#34;1986&#34;
+	height=&#34;1042&#34;
+	srcset=&#34;https://CY1218-coder.github.io/p/mysql/20261115006_hu2568536054368569030.png 480w, https://CY1218-coder.github.io/p/mysql/20261115006_hu17056584149899808536.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;190&#34;
+		data-flex-basis=&#34;457px&#34;
+	
+&gt;&lt;br&gt;
+　　覆盖索引
+&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql/20261115007.png&#34;
+	width=&#34;1922&#34;
+	height=&#34;992&#34;
+	srcset=&#34;https://CY1218-coder.github.io/p/mysql/20261115007_hu14288720969646214876.png 480w, https://CY1218-coder.github.io/p/mysql/20261115007_hu15694156365996314208.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;193&#34;
+		data-flex-basis=&#34;465px&#34;
+	
+&gt;&lt;br&gt;&lt;/p&gt;
+&lt;h3 id=&#34;为什么-mysql-innodb-选择-btree-作为索引的数据结构&#34;&gt;为什么 MySQL InnoDB 选择 B+tree 作为索引的数据结构？
+&lt;/h3&gt;&lt;h4 id=&#34;b树和二叉树对比&#34;&gt;B+树和二叉树对比
+&lt;/h4&gt;&lt;p&gt;对于有 N 个叶子节点的 B+Tree，其搜索复杂度为 O(logmN)，其中 每个分支结点最多有m棵子树（孩子结点）&lt;br&gt;
+在实际的应用当中， m 值是大于100的，这样就保证了，即使数据达到千万级别时，B+Tree 的高度依然维持在 3 ~ 4 层左右，也就是说一次数据查询操作只需要做 3 ~ 4 次的磁盘 I/O 操作就能查询到目标数据。&lt;br&gt;
+而二叉树的每个父节点的儿子节点个数只能是 2 个，意味着其搜索复杂度为 O(logN)，这已经比 B+Tree 高出不少，因此二叉树检索到目标数据所经历的磁盘 I/O 次数要更多。&lt;br&gt;&lt;/p&gt;
+&lt;h4 id=&#34;b树和b树对比&#34;&gt;B+树和B树对比
+&lt;/h4&gt;&lt;p&gt;B+Tree 只在叶子节点存储数据，而 B 树的非叶子节点也要存储数据，所以 B+Tree 的单个节点的数据量更小，在相同的磁盘 I/O 次数下，就能查询更多的节点。&lt;br&gt;
+另外，B+Tree 叶子节点采用的是双链表连接，适合 MySQL 中常见的基于范围的顺序查找，而 B 树无法做到这一点。&lt;br&gt;
+&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql/20261115008.png&#34;
+	width=&#34;2094&#34;
+	height=&#34;1174&#34;
+	srcset=&#34;https://CY1218-coder.github.io/p/mysql/20261115008_hu269604067221198333.png 480w, https://CY1218-coder.github.io/p/mysql/20261115008_hu4756173979210193331.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;178&#34;
+		data-flex-basis=&#34;428px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;h4 id=&#34;b树和哈希对比&#34;&gt;B+树和哈希对比
+&lt;/h4&gt;&lt;p&gt;Hash 在做等值查询的时候效率快，搜索复杂度为 O(1)。&lt;br&gt;
+Hash 索引只能用于对等比较(=, in)，不支持范围查询（between, &amp;gt;, &amp;lt;, &amp;hellip;），它更适合做等值的查询。&lt;br&gt;
+Hash 索引无法利用索引完成排序操作。&lt;br&gt;
+这也是 B+Tree 索引要比 Hash 表索引有着更广泛的适用场景的原因。&lt;br&gt;&lt;/p&gt;
+&lt;h4 id=&#34;总结&#34;&gt;总结
+&lt;/h4&gt;&lt;p&gt;InnoDB 是 MySQL 默认的存储引擎，它就是采用了 B+ 树作为索引的数据结构。
+要设计一个 MySQL 的索引数据结构，不仅仅考虑数据结构增删改的时间复杂度，更重要的是要考虑磁盘 I/0 的操作次数。
+因为索引和记录都是存放在硬盘，硬盘是一个非常慢的存储设备，我们在查询数据的时候，最好能在尽可能少的磁盘 I/0 的操作次数内完成。&lt;/p&gt;
+&lt;p&gt;二分查找树虽然是一个天然的二分结构，能很好的利用二分查找快速定位数据，但是它存在一种极端的情况，每当插入的元素都是树内最大的元素，就会导致二分查找树退化成一个链表，此时查询复杂度就会从 O(logn)降低为 O(n)。
+为了解决二分查找树退化成链表的问题，就出现了自平衡二叉树，保证了查询操作的时间复杂度就会一直维持在 O(logn) 。但是它本质上还是一个二叉树，每个节点只能有 2 个子节点，随着元素的增多，树的高度会越来越高。
+而树的高度决定于磁盘  I/O 操作的次数，因为树是存储在磁盘中的，访问每个节点，都对应一次磁盘 I/O 操作，也就是说树的高度就等于每次查询数据时磁盘 IO 操作的次数，所以树的高度越高，就会影响查询性能。&lt;/p&gt;
+&lt;p&gt;B 树和 B+ 都是通过多叉树的方式，会将树的高度变矮，所以这两个数据结构非常适合检索存于磁盘中的数据。
+但是 MySQL 默认的存储引擎 InnoDB 采用的是 B+ 作为索引的数据结构，原因有：
+B+ 树的非叶子节点不存放实际的记录数据，仅存放索引，因此数据量相同的情况下，相比存储即存索引又存记录的 B 树，B+树的非叶子节点可以存放更多的索引，因此 B+ 树可以比 B 树更「矮胖」，查询底层节点的磁盘 I/O次数会更少。
+B+ 树有大量的冗余节点（所有非叶子节点都是冗余索引），这些冗余索引让 B+ 树在插入、删除的效率都更高，比如删除根节点的时候，不会像 B 树那样会发生复杂的树的变化；
+B+ 树叶子节点之间用链表连接了起来，有利于范围查询，而 B 树要实现范围查询，因此只能通过树的遍历来完成范围查询，这会涉及多个节点的磁盘 I/O 操作，范围查询效率不如 B+ 树。&lt;/p&gt;
+&lt;h3 id=&#34;如何优化索引&#34;&gt;如何优化索引
+&lt;/h3&gt;&lt;h3 id=&#34;什么时候使用索引比较合适索引应该如何设计&#34;&gt;什么时候使用索引比较合适，索引应该如何设计
+&lt;/h3&gt;&lt;h3 id=&#34;聚簇索引和二级索引对比&#34;&gt;聚簇索引和二级索引对比
+&lt;/h3&gt;&lt;h3 id=&#34;什么是回表回表的优势和劣势&#34;&gt;什么是回表，回表的优势和劣势
+&lt;/h3&gt;&lt;h3 id=&#34;索引失效的场景&#34;&gt;索引失效的场景
+&lt;/h3&gt;&lt;h3 id=&#34;如何分页比较高效&#34;&gt;如何分页比较高效
+&lt;/h3&gt;&lt;hr&gt;
 </description>
         </item>
         
