@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+    <channel>
+        <title>Redis核心知识 on CY1218-coder</title>
+        <link>https://CY1218-coder.github.io/categories/redis%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/</link>
+        <description>Recent content in Redis核心知识 on CY1218-coder</description>
+        <generator>Hugo -- gohugo.io</generator>
+        <language>zh-cn</language>
+        <copyright>CY1218-coder</copyright>
+        <lastBuildDate>Mon, 16 Nov 2026 20:50:49 +0800</lastBuildDate><atom:link href="https://CY1218-coder.github.io/categories/redis%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/index.xml" rel="self" type="application/rss+xml" /><item>
+        <title>Redis</title>
+        <link>https://CY1218-coder.github.io/p/redis/</link>
+        <pubDate>Mon, 16 Nov 2026 20:50:49 +0800</pubDate>
+        
+        <guid>https://CY1218-coder.github.io/p/redis/</guid>
+        <description></description>
+        </item>
+        
+    </channel>
+</rss>
