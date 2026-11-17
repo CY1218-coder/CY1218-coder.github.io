@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
     <channel>
-        <title>MySQL核心知识 on CY1218-coder</title>
-        <link>https://CY1218-coder.github.io/categories/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/</link>
-        <description>Recent content in MySQL核心知识 on CY1218-coder</description>
+        <title>MySQL on CY1218-coder</title>
+        <link>https://CY1218-coder.github.io/categories/mysql/</link>
+        <description>Recent content in MySQL on CY1218-coder</description>
         <generator>Hugo -- gohugo.io</generator>
         <language>zh-cn</language>
         <copyright>CY1218-coder</copyright>
-        <lastBuildDate>Sat, 14 Nov 2026 21:32:35 +0800</lastBuildDate><atom:link href="https://CY1218-coder.github.io/categories/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/index.xml" rel="self" type="application/rss+xml" /><item>
-        <title>MySQL</title>
-        <link>https://CY1218-coder.github.io/p/mysql/</link>
+        <lastBuildDate>Sat, 14 Nov 2026 21:32:35 +0800</lastBuildDate><atom:link href="https://CY1218-coder.github.io/categories/mysql/index.xml" rel="self" type="application/rss+xml" /><item>
+        <title>MySQL核心知识</title>
+        <link>https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/</link>
         <pubDate>Sat, 14 Nov 2026 21:32:35 +0800</pubDate>
         
-        <guid>https://CY1218-coder.github.io/p/mysql/</guid>
+        <guid>https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/</guid>
         <description>&lt;hr&gt;
 &lt;h2 id=&#34;基础篇&#34;&gt;基础篇
 &lt;/h2&gt;&lt;h3 id=&#34;增删改查的语法&#34;&gt;增删改查的语法
@@ -66,10 +66,10 @@
 　　预处理阶段：检查表或字段是否存在；将 select * 中的 * 符号扩展为表上的所有列；&lt;br&gt;
 　　优化阶段：基于查询成本的考虑， 选择查询成本最小的执行计划；&lt;br&gt;
 　　执行阶段：根据执行计划执行 SQL 查询语句，从存储引擎读取记录，返回给客户端。
-&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql/20261114001.png&#34;
+&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261114001.png&#34;
 	width=&#34;2028&#34;
 	height=&#34;1164&#34;
-	srcset=&#34;https://CY1218-coder.github.io/p/mysql/20261114001_hu1784083012333640493.png 480w, https://CY1218-coder.github.io/p/mysql/20261114001_hu7482345856115681778.png 1024w&#34;
+	srcset=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261114001_hu1784083012333640493.png 480w, https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261114001_hu7482345856115681778.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 	
@@ -88,10 +88,10 @@ t_xxx.frm：用来保存表结构&lt;br&gt;
 t_xxx.ibd：用来保存表数据&lt;br&gt;
 &lt;br&gt;
 表空间由段（segment）、区（extent）、页（page）、行（row）组成，InnoDB存储引擎的逻辑存储结构大致如下图：&lt;br&gt;
-&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql/20261114002.png&#34;
+&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261114002.png&#34;
 	width=&#34;1114&#34;
 	height=&#34;1052&#34;
-	srcset=&#34;https://CY1218-coder.github.io/p/mysql/20261114002_hu9083793342517665335.png 480w, https://CY1218-coder.github.io/p/mysql/20261114002_hu5397180926648906320.png 1024w&#34;
+	srcset=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261114002_hu9083793342517665335.png 480w, https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261114002_hu5397180926648906320.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;InnoDB存储引擎的逻辑存储结构&#34;
@@ -106,10 +106,10 @@ t_xxx.ibd：用来保存表数据&lt;br&gt;
 行格式（row_format），就是一条记录的存储结构。&lt;br&gt;
 InnoDB 提供了 4 种行格式，分别是　Redundant　Compact　Dynamic　Compressed　行格式。&lt;br&gt;
 接下来先重点介绍 Compact 行格式：
-&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql/20261114003.png&#34;
+&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261114003.png&#34;
 	width=&#34;2388&#34;
 	height=&#34;286&#34;
-	srcset=&#34;https://CY1218-coder.github.io/p/mysql/20261114003_hu5013787333318115038.png 480w, https://CY1218-coder.github.io/p/mysql/20261114003_hu5705461827584521811.png 1024w&#34;
+	srcset=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261114003_hu5013787333318115038.png 480w, https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261114003_hu5705461827584521811.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;InnoDB存储引擎的逻辑存储结构&#34;
@@ -166,10 +166,10 @@ InnoDB 提供了 4 种行格式，分别是　Redundant　Compact　Dynamic　Co
 　　如果一个数据页存不了一条记录，InnoDB 存储引擎会自动将溢出的数据存放到「溢出页」中。&lt;br&gt;
 　　在一般情况下，InnoDB 的数据都是存放在「数据页」中。但是当发生行溢出时，溢出的数据会存放到「溢出页」中。&lt;br&gt;
 　　当发生行溢出时，在记录的真实数据处只会保存该列的一部分数据，而把剩余的数据放在「溢出页」中，然后真实数据处用 20 字节存储指向溢出页的地址，从而可以找到剩余数据所在的页。大致如下图所示。
-　　&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql/20261115001.png&#34;
+　　&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261115001.png&#34;
 	width=&#34;1016&#34;
 	height=&#34;336&#34;
-	srcset=&#34;https://CY1218-coder.github.io/p/mysql/20261115001_hu5787002720839823103.png 480w, https://CY1218-coder.github.io/p/mysql/20261115001_hu4676878817637581711.png 1024w&#34;
+	srcset=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261115001_hu5787002720839823103.png 480w, https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261115001_hu4676878817637581711.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 	
@@ -186,10 +186,10 @@ InnoDB 提供了 4 种行格式，分别是　Redundant　Compact　Dynamic　Co
 　　存储引擎是如何存储数据、如何为存储的数据建立索引和如何更新、查询数据等技术的实现方法。&lt;br&gt;
 　　MySQL存储引擎有 MyISAM、InnoDB、Memory，其中 InnoDB 是在MySQL5.5之后成为默认存储引擎。&lt;br&gt;
 　　下图是 MySQL 的结构图，索引和数据就是位于存储引擎中：&lt;br&gt;
-　　　　&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql/20261115002.png&#34;
+　　　　&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261115002.png&#34;
 	width=&#34;448&#34;
 	height=&#34;476&#34;
-	srcset=&#34;https://CY1218-coder.github.io/p/mysql/20261115002_hu8859934550751649802.png 480w, https://CY1218-coder.github.io/p/mysql/20261115002_hu2072215742835062824.png 1024w&#34;
+	srcset=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261115002_hu8859934550751649802.png 480w, https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261115002_hu2072215742835062824.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 	
@@ -199,10 +199,10 @@ InnoDB 提供了 4 种行格式，分别是　Redundant　Compact　Dynamic　Co
 	
 &gt;&lt;/p&gt;
 &lt;h3 id=&#34;索引的作用&#34;&gt;索引的作用
-&lt;/h3&gt;&lt;p&gt;&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql/20261115003.png&#34;
+&lt;/h3&gt;&lt;p&gt;&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261115003.png&#34;
 	width=&#34;1846&#34;
 	height=&#34;238&#34;
-	srcset=&#34;https://CY1218-coder.github.io/p/mysql/20261115003_hu18242269229931401504.png 480w, https://CY1218-coder.github.io/p/mysql/20261115003_hu9430353459181652789.png 1024w&#34;
+	srcset=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261115003_hu18242269229931401504.png 480w, https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261115003_hu9430353459181652789.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 	
@@ -212,10 +212,10 @@ InnoDB 提供了 4 种行格式，分别是　Redundant　Compact　Dynamic　Co
 	
 &gt;&lt;/p&gt;
 &lt;h3 id=&#34;索引的类型&#34;&gt;索引的类型
-&lt;/h3&gt;&lt;p&gt;&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql/20261115004.png&#34;
+&lt;/h3&gt;&lt;p&gt;&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261115004.png&#34;
 	width=&#34;624&#34;
 	height=&#34;528&#34;
-	srcset=&#34;https://CY1218-coder.github.io/p/mysql/20261115004_hu15173686597823716232.png 480w, https://CY1218-coder.github.io/p/mysql/20261115004_hu8002781579875122825.png 1024w&#34;
+	srcset=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261115004_hu15173686597823716232.png 480w, https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261115004_hu8002781579875122825.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 	
@@ -233,10 +233,10 @@ InnoDB 提供了 4 种行格式，分别是　Redundant　Compact　Dynamic　Co
 其它索引都属于二级索引。创建的聚簇索引和二级索引默认使用的是 B+Tree 索引。&lt;br&gt;&lt;/p&gt;
 &lt;p&gt;模拟 B+Tree 索引在存储数据中的具体实现。&lt;br&gt;
 　　聚簇索引　二级索引
-&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql/20261115005.png&#34;
+&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261115005.png&#34;
 	width=&#34;2026&#34;
 	height=&#34;967&#34;
-	srcset=&#34;https://CY1218-coder.github.io/p/mysql/20261115005_hu10609524405539797025.png 480w, https://CY1218-coder.github.io/p/mysql/20261115005_hu16820810810421390261.png 1024w&#34;
+	srcset=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261115005_hu10609524405539797025.png 480w, https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261115005_hu16820810810421390261.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 	
@@ -246,10 +246,10 @@ InnoDB 提供了 4 种行格式，分别是　Redundant　Compact　Dynamic　Co
 	
 &gt;&lt;br&gt;
 　　回表查询
-&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql/20261115006.png&#34;
+&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261115006.png&#34;
 	width=&#34;1986&#34;
 	height=&#34;1042&#34;
-	srcset=&#34;https://CY1218-coder.github.io/p/mysql/20261115006_hu2568536054368569030.png 480w, https://CY1218-coder.github.io/p/mysql/20261115006_hu17056584149899808536.png 1024w&#34;
+	srcset=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261115006_hu2568536054368569030.png 480w, https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261115006_hu17056584149899808536.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 	
@@ -259,10 +259,10 @@ InnoDB 提供了 4 种行格式，分别是　Redundant　Compact　Dynamic　Co
 	
 &gt;&lt;br&gt;
 　　覆盖索引
-&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql/20261115007.png&#34;
+&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261115007.png&#34;
 	width=&#34;1922&#34;
 	height=&#34;992&#34;
-	srcset=&#34;https://CY1218-coder.github.io/p/mysql/20261115007_hu14288720969646214876.png 480w, https://CY1218-coder.github.io/p/mysql/20261115007_hu15694156365996314208.png 1024w&#34;
+	srcset=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261115007_hu14288720969646214876.png 480w, https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261115007_hu15694156365996314208.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 	
@@ -398,10 +398,10 @@ InnoDB 提供了 4 种行格式，分别是　Redundant　Compact　Dynamic　Co
 &lt;li&gt;单列索引：一个索引只包含单个列，比如主键索引。&lt;br&gt;&lt;/li&gt;
 &lt;li&gt;联合索引：一个索引包含了多个列。&lt;br&gt;
 在业务场景中，如果存在多个查询条件，考虑针对于查询字段建立索引时，建议建立联合索引，而非单列索引。&lt;br&gt;
-&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql/20261116001.png&#34;
+&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261116001.png&#34;
 	width=&#34;1980&#34;
 	height=&#34;841&#34;
-	srcset=&#34;https://CY1218-coder.github.io/p/mysql/20261116001_hu18404560681746301906.png 480w, https://CY1218-coder.github.io/p/mysql/20261116001_hu5535518641985107898.png 1024w&#34;
+	srcset=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261116001_hu18404560681746301906.png 480w, https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261116001_hu5535518641985107898.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 	
@@ -419,10 +419,10 @@ InnoDB 提供了 4 种行格式，分别是　Redundant　Compact　Dynamic　Co
 &lt;h4 id=&#34;b树和b树对比&#34;&gt;B+树和B树对比
 &lt;/h4&gt;&lt;p&gt;B+Tree 只在叶子节点存储数据，而 B 树的非叶子节点也要存储数据，所以 B+Tree 的单个节点的数据量更小，在相同的磁盘 I/O 次数下，就能查询更多的节点。&lt;br&gt;
 另外，B+Tree 叶子节点采用的是双链表连接，适合 MySQL 中常见的基于范围的顺序查找，而 B 树无法做到这一点。&lt;br&gt;
-&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql/20261115008.png&#34;
+&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261115008.png&#34;
 	width=&#34;2094&#34;
 	height=&#34;1174&#34;
-	srcset=&#34;https://CY1218-coder.github.io/p/mysql/20261115008_hu269604067221198333.png 480w, https://CY1218-coder.github.io/p/mysql/20261115008_hu4756173979210193331.png 1024w&#34;
+	srcset=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261115008_hu269604067221198333.png 480w, https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261115008_hu4756173979210193331.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 	
