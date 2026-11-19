@@ -629,10 +629,10 @@ InnoDB 提供了 4 种行格式，分别是　Redundant　Compact　Dynamic　Co
 </span><span class="lnt">4
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="w">            </span><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="k">table_name</span><span class="p">(</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="p">...</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="w"> </span><span class="p">(</span><span class="n">index_col_1</span><span class="p">)</span><span class="w"> </span><span class="k">using</span><span class="w"> </span><span class="n">btree</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="p">);</span><span class="w">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="k">table_name</span><span class="p">(</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">...</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="w"> </span><span class="p">(</span><span class="n">index_col_1</span><span class="p">)</span><span class="w"> </span><span class="k">using</span><span class="w"> </span><span class="n">btree</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">);</span><span class="w">
 </span></span></span></code></pre></td></tr></table>
 </div>
 </div><ul>
@@ -648,10 +648,10 @@ InnoDB 提供了 4 种行格式，分别是　Redundant　Compact　Dynamic　Co
 </span><span class="lnt">4
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="w">            </span><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="k">table_name</span><span class="p">(</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="p">...</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="k">unique</span><span class="w"> </span><span class="k">key</span><span class="w"> </span><span class="p">(</span><span class="n">index_col_1</span><span class="p">,</span><span class="w"> </span><span class="n">index_col_2</span><span class="p">,</span><span class="w"> </span><span class="p">...)</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="p">);</span><span class="w">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="k">table_name</span><span class="p">(</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">...</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">unique</span><span class="w"> </span><span class="k">key</span><span class="w"> </span><span class="p">(</span><span class="n">index_col_1</span><span class="p">,</span><span class="w"> </span><span class="n">index_col_2</span><span class="p">,</span><span class="w"> </span><span class="p">...)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">);</span><span class="w">
 </span></span></span></code></pre></td></tr></table>
 </div>
 </div><p>　　　　　建表后，如果要创建唯一索引，可以使用下面这条命令：</p>
@@ -661,8 +661,8 @@ InnoDB 提供了 4 种行格式，分别是　Redundant　Compact　Dynamic　Co
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="w">            </span><span class="k">create</span><span class="w"> </span><span class="k">unique</span><span class="w"> </span><span class="k">index</span><span class="w"> </span><span class="n">index_name</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="k">table_name</span><span class="p">(</span><span class="n">index_col_1</span><span class="p">,</span><span class="w"> </span><span class="n">index_col_2</span><span class="p">,</span><span class="w"> </span><span class="p">...);</span><span class="w">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">create</span><span class="w"> </span><span class="k">unique</span><span class="w"> </span><span class="k">index</span><span class="w"> </span><span class="n">index_name</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">on</span><span class="w"> </span><span class="k">table_name</span><span class="p">(</span><span class="n">index_col_1</span><span class="p">,</span><span class="w"> </span><span class="n">index_col_2</span><span class="p">,</span><span class="w"> </span><span class="p">...);</span><span class="w">
 </span></span></span></code></pre></td></tr></table>
 </div>
 </div><ul>
@@ -678,10 +678,10 @@ InnoDB 提供了 4 种行格式，分别是　Redundant　Compact　Dynamic　Co
 </span><span class="lnt">4
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="w">            </span><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="k">table_name</span><span class="p">(</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="p">...</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="k">index</span><span class="p">(</span><span class="n">index_col_1</span><span class="p">,</span><span class="w"> </span><span class="n">index_col_2</span><span class="p">,</span><span class="w"> </span><span class="p">...)</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="p">);</span><span class="w">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="k">table_name</span><span class="p">(</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">...</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">index</span><span class="p">(</span><span class="n">index_col_1</span><span class="p">,</span><span class="w"> </span><span class="n">index_col_2</span><span class="p">,</span><span class="w"> </span><span class="p">...)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">);</span><span class="w">
 </span></span></span></code></pre></td></tr></table>
 </div>
 </div><p>　　　　　建表后，如果要创建普通索引，可以使用下面这条命令：<br></p>
@@ -691,8 +691,8 @@ InnoDB 提供了 4 种行格式，分别是　Redundant　Compact　Dynamic　Co
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="w">            </span><span class="k">create</span><span class="w"> </span><span class="k">index</span><span class="w"> </span><span class="n">index_name</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="k">table_name</span><span class="p">(</span><span class="n">index_col_1</span><span class="p">,</span><span class="w"> </span><span class="n">index_col_2</span><span class="p">,</span><span class="w"> </span><span class="p">...);</span><span class="w">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">create</span><span class="w"> </span><span class="k">index</span><span class="w"> </span><span class="n">index_name</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">on</span><span class="w"> </span><span class="k">table_name</span><span class="p">(</span><span class="n">index_col_1</span><span class="p">,</span><span class="w"> </span><span class="n">index_col_2</span><span class="p">,</span><span class="w"> </span><span class="p">...);</span><span class="w">
 </span></span></span></code></pre></td></tr></table>
 </div>
 </div><ul>
@@ -710,10 +710,10 @@ InnoDB 提供了 4 种行格式，分别是　Redundant　Compact　Dynamic　Co
 </span><span class="lnt">4
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="w">            </span><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="k">table_name</span><span class="p">(</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="p">...</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="k">index</span><span class="p">(</span><span class="k">column_name</span><span class="p">(</span><span class="k">length</span><span class="p">))</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="p">);</span><span class="w">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="k">table_name</span><span class="p">(</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">...</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">index</span><span class="p">(</span><span class="k">column_name</span><span class="p">(</span><span class="k">length</span><span class="p">))</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">);</span><span class="w">
 </span></span></span></code></pre></td></tr></table>
 </div>
 </div><p>　　　　　建表后，如果要创建前缀索引，可以使用下面这条命令：<br></p>
@@ -723,8 +723,8 @@ InnoDB 提供了 4 种行格式，分别是　Redundant　Compact　Dynamic　Co
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="w">            </span><span class="k">create</span><span class="w"> </span><span class="k">index</span><span class="w"> </span><span class="n">index_name</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="k">table_name</span><span class="p">(</span><span class="k">column_name</span><span class="p">(</span><span class="k">length</span><span class="p">));</span><span class="w">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">create</span><span class="w"> </span><span class="k">index</span><span class="w"> </span><span class="n">index_name</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">on</span><span class="w"> </span><span class="k">table_name</span><span class="p">(</span><span class="k">column_name</span><span class="p">(</span><span class="k">length</span><span class="p">));</span><span class="w">
 </span></span></span></code></pre></td></tr></table>
 </div>
 </div><h4 id="按字段个数分类">按字段个数分类
@@ -746,6 +746,84 @@ InnoDB 提供了 4 种行格式，分别是　Redundant　Compact　Dynamic　Co
 	
 ></li>
 </ul>
+<p>最左前缀法则：<br>
+　　如果索引引了多列（联合索引），要遵守最左前缀法则。<br>
+　　最左前缀法则指的是查询从索引的最左列开始，并且不跳过索引中的列。<br>
+　　如果跳跃某一列，索引将部分失效（后面的字段索引失效）。<br>
+比如，如果创建了一个 (a, b, c) 联合索引，如果查询条件是以下这几种，就可以匹配上联合索引：<br></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">where</span><span class="w"> </span><span class="n">a</span><span class="o">=</span><span class="mi">1</span><span class="err">；</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">where</span><span class="w"> </span><span class="n">a</span><span class="o">=</span><span class="mi">1</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">b</span><span class="o">=</span><span class="mi">2</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="k">c</span><span class="o">=</span><span class="mi">3</span><span class="err">；</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">where</span><span class="w"> </span><span class="n">a</span><span class="o">=</span><span class="mi">1</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">b</span><span class="o">=</span><span class="mi">2</span><span class="err">；</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>需要注意的是，因为有查询优化器，所以 a 字段在 where 子句的顺序并不重要。<br>
+如果查询条件是以下这几种，因为不符合最左匹配原则，所以就无法匹配上联合索引，联合索引就会失效:<br></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">where</span><span class="w"> </span><span class="n">b</span><span class="o">=</span><span class="mi">2</span><span class="err">；</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">where</span><span class="w"> </span><span class="k">c</span><span class="o">=</span><span class="mi">3</span><span class="err">；</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">where</span><span class="w"> </span><span class="n">b</span><span class="o">=</span><span class="mi">2</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="k">c</span><span class="o">=</span><span class="mi">3</span><span class="err">；</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>上面这些查询条件之所以会失效，是因为(a, b, c) 联合索引<br>
+是先按 a 排序，在 a 相同的情况再按 b 排序，在 b 相同的情况再按 c 排序。<br>
+所以，b 和 c 是全局无序，局部相对有序的，<br>
+这样在没有遵循最左匹配原则的情况下，是无法利用到索引的。<br></p>
+<p>联合索引范围查询：<br>
+　　联合索引有一些特殊情况，并不是查询过程使用了联合索引查询，就代表联合索引中的所有字段都用到了联合索引进行索引查询，也就是可能存在部分字段用到联合索引的 B+Tree，部分字段没有用到联合索引的 B+Tree 的情况。<br>
+　　这种特殊情况就发生在范围查询。联合索引的最左匹配原则会一直向右匹配直到遇到「范围查询」就会停止匹配。也就是范围查询的字段可以用到联合索引，但是在范围查询字段的后面的字段无法用到联合索引。<br></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">t_table</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">-- 联合索引（a, b）哪一个字段用到了联合索引的 B+Tree？
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　这条查询语句中，只有 a 字段使用了联合索引来进行索引查询，而 b 字段则没有使用到联合索引。<br>
+　　因为在符合 a &gt; 1 条件的二级索引记录的范围里，b 字段的值是无序的。<br>
+　　通过查询语句我们可以知道，a 字段使用了 &gt; 进行范围查询，联合索引的最左匹配原则在遇到 a 字段的范围查询（ &gt;）后就停止匹配了，因此 b 字段并没有使用到联合索引。<br>
+举个例子，a&gt;1 的情况下，有这些记录：<br>
+　　a=2，b=8<br>
+　　a=2，b=9<br>
+　　a=3，b=2<br>
+　　a=3，b=3<br>
+a&gt;1 的查询，并不是按 a =2 、a =3这样去扫描索引的，而是 a 走了索引找到了第一个大于1的记录，也就是a=2，b=8开始。<br>
+接着就会根据叶子节点间的链表往后扫描记录。这时候 b 并不是有序的（b=8，b=9，b=2，b=3）无法利用二分查。<br></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">t_table</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">-- 联合索引（a, b）哪一个字段用到了联合索引的 B+Tree？
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="err">执行</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">a</span><span class="o">&gt;=</span><span class="mi">2</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">b</span><span class="o">=</span><span class="mi">1</span><span class="w"> </span><span class="err">会被拆成两个</span><span class="k">sql</span><span class="err">：</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">where</span><span class="w"> </span><span class="n">a</span><span class="o">&gt;</span><span class="mi">2</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">b</span><span class="o">=</span><span class="mi">1</span><span class="w"> </span><span class="err">，这一条</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="err">不能走索引</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">where</span><span class="w"> </span><span class="n">a</span><span class="o">=</span><span class="mi">2</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">b</span><span class="o">=</span><span class="mi">1</span><span class="w"> </span><span class="err">，这一条</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="err">都能走索引</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　这条查询语句 a 和 b 字段都用到了联合索引进行索引查询。<br>
+　　虽然在符合 a&gt;= 1 条件的二级索引记录的范围里，b 字段的值是「无序」的。<br>
+　　但是对于符合 a = 1 的二级索引记录的范围里，b 字段的值是「有序」的（因为对于联合索引，是先按照 a 字段的值排序，然后在 a 字段的值相同的情况下，再按照 b 字段的值进行排序）。<br>
+　　从这我们就可以分析得出，只有 a=1 and b=2 走了联合索引，然后后续的 a&gt;1 其实还是不走联合索引。<br></p>
 <h3 id="为什么-mysql-innodb-选择-btree-作为索引的数据结构">为什么 MySQL InnoDB 选择 B+tree 作为索引的数据结构？
 </h3><h4 id="b树和二叉树对比">B+树和二叉树对比
 </h4><p>对于有 N 个叶子节点的 B+Tree，其搜索复杂度为 O(logmN)，其中 每个分支结点最多有m棵子树（孩子结点）<br>
