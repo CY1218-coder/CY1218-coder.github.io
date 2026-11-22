@@ -10,7 +10,7 @@
 <meta property='og:description' content="基础篇 增删改查的语法 增： 给指定字段添加数据 insert into 表名 (字段名1, 字段名2, &hellip;) values (值1, 值2, &hellip;); 给指定字段批量添加数据 insert into 表名 (字段名1, 字段名">
 <meta property='og:url' content='https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/'>
 <meta property='og:site_name' content='CY1218-coder'>
-<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:published_time' content='2026-11-14T21:32:35&#43;08:00'/><meta property='article:modified_time' content='2026-11-14T21:32:35&#43;08:00'/>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:published_time' content='2026-10-01T21:32:35&#43;08:00'/><meta property='article:modified_time' content='2026-10-01T21:32:35&#43;08:00'/>
 <meta name="twitter:title" content="MySQL核心知识">
 <meta name="twitter:description" content="基础篇 增删改查的语法 增： 给指定字段添加数据 insert into 表名 (字段名1, 字段名2, &hellip;) values (值1, 值2, &hellip;); 给指定字段批量添加数据 insert into 表名 (字段名1, 字段名">
     <link rel="shortcut icon" href="/favicon.ico" />
@@ -275,11 +275,19 @@
             <li><a href="#总结">总结</a></li>
           </ol>
         </li>
-        <li><a href="#如何优化索引">如何优化索引</a></li>
-        <li><a href="#什么时候使用索引比较合适索引应该如何设计">什么时候使用索引比较合适，索引应该如何设计</a></li>
-        <li><a href="#聚簇索引和二级索引对比">聚簇索引和二级索引对比</a></li>
-        <li><a href="#什么是回表回表的优势和劣势">什么是回表，回表的优势和劣势</a></li>
+        <li><a href="#索引的创建时机">索引的创建时机</a>
+          <ol>
+            <li><a href="#什么时候需要创建索引">什么时候需要创建索引</a></li>
+            <li><a href="#什么时候不需要创建索引">什么时候不需要创建索引</a></li>
+          </ol>
+        </li>
+        <li><a href="#索引的设计原则">索引的设计原则</a></li>
         <li><a href="#索引失效的场景">索引失效的场景</a></li>
+        <li><a href="#索引的优化">索引的优化</a>
+          <ol>
+            <li><a href="#前缀索引优化">前缀索引优化</a></li>
+          </ol>
+        </li>
         <li><a href="#如何分页比较高效">如何分页比较高效</a></li>
       </ol>
     </li>
@@ -332,7 +340,7 @@
   <path d="M3 11h16" />
   <path d="M18 16.496v1.504l1 1" />
 </svg>
-                <time class="article-time--published">2026-11-14</time>
+                <time class="article-time--published">2026-10-01</time>
             </div>
         
 
@@ -780,7 +788,8 @@ InnoDB 提供了 4 种行格式，分别是　Redundant　Compact　Dynamic　Co
 </div><p>上面这些查询条件之所以会失效，是因为(a, b, c) 联合索引<br>
 是先按 a 排序，在 a 相同的情况再按 b 排序，在 b 相同的情况再按 c 排序。<br>
 所以，b 和 c 是全局无序，局部相对有序的，<br>
-这样在没有遵循最左匹配原则的情况下，是无法利用到索引的。<br></p>
+这样在没有遵循最左匹配原则的情况下，是无法利用到索引的。<br>
+利用索引的前提是索引里的 key 是有序的。<br></p>
 <p>联合索引范围查询：<br>
 　　联合索引有一些特殊情况，并不是查询过程使用了联合索引查询，就代表联合索引中的所有字段都用到了联合索引进行索引查询，也就是可能存在部分字段用到联合索引的 B+Tree，部分字段没有用到联合索引的 B+Tree 的情况。<br>
 　　这种特殊情况就发生在范围查询。联合索引的最左匹配原则会一直向右匹配直到遇到「范围查询」就会停止匹配。也就是范围查询的字段可以用到联合索引，但是在范围查询字段的后面的字段无法用到联合索引。<br></p>
@@ -824,6 +833,46 @@ a&gt;1 的查询，并不是按 a =2 、a =3这样去扫描索引的，而是 a 
 　　虽然在符合 a&gt;= 1 条件的二级索引记录的范围里，b 字段的值是「无序」的。<br>
 　　但是对于符合 a = 1 的二级索引记录的范围里，b 字段的值是「有序」的（因为对于联合索引，是先按照 a 字段的值排序，然后在 a 字段的值相同的情况下，再按照 b 字段的值进行排序）。<br>
 　　从这我们就可以分析得出，只有 a=1 and b=2 走了联合索引，然后后续的 a&gt;1 其实还是不走联合索引。<br></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">t_table</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="k">between</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="mi">8</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">-- 联合索引（a, b）哪一个字段用到了联合索引的 B+Tree？
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　查询条件中 a between 2 and 8 的意思是查询 a 字段的值在 2 和 8 之间的记录。<br>
+　　在 MySQL 中，between 包含了 value1 和 value2 边界值，类似于 &gt;= and =&lt;。<br>
+　　因此这条查询语句 a 和 b 字段都用到了联合索引进行索引查询。<br></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">t_user</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="k">like</span><span class="w"> </span><span class="s1">&#39;j%&#39;</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">age</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">22</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">-- 联合索引（name, age）哪一个字段用到了联合索引的 B+Tree？
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　虽然在符合前缀为 &lsquo;j&rsquo; 的 name 字段的二级索引记录的范围里，age 字段的值是「无序」的。<br>
+　　但是对于符合 name = j 的二级索引记录的范围里，age字段的值是「有序」的。<br>
+　　因为对于联合索引，是先按照 name 字段的值排序，然后在 name 字段的值相同的情况下，再按照 age 字段的值进行排序。<br>
+　　于是，在确定需要扫描的二级索引的范围时，当二级索引记录的 name 字段值为 &lsquo;j&rsquo; 时，可以通过 age = 22 条件减少需要扫描的二级索引记录范围。（age 字段可以利用联合索引进行索引查询）。<br>
+　　也就是说，从符合 name = &lsquo;j&rsquo; and age = 22 条件的第一条记录时开始扫描，而不需要从第一个 name 为 j 的记录开始扫描。<br>
+<img src="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261122001.png"
+	width="1418"
+	height="522"
+	srcset="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261122001_hu12794757873603739079.png 480w, /p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261122001_hu5469484811522071215.png 1024w"
+	loading="lazy"
+	
+	
+		class="gallery-image" 
+		data-flex-grow="271"
+		data-flex-basis="651px"
+	
+></p>
 <h3 id="为什么-mysql-innodb-选择-btree-作为索引的数据结构">为什么 MySQL InnoDB 选择 B+tree 作为索引的数据结构？
 </h3><h4 id="b树和二叉树对比">B+树和二叉树对比
 </h4><p>对于有 N 个叶子节点的 B+Tree，其搜索复杂度为 O(logmN)，其中 每个分支结点最多有m棵子树（孩子结点）<br>
@@ -850,23 +899,117 @@ Hash 索引只能用于对等比较(=, in)，不支持范围查询（between, &g
 Hash 索引无法利用索引完成排序操作。<br>
 这也是 B+Tree 索引要比 Hash 表索引有着更广泛的适用场景的原因。<br></p>
 <h4 id="总结">总结
-</h4><p>InnoDB 是 MySQL 默认的存储引擎，它就是采用了 B+ 树作为索引的数据结构。
+</h4><p>　　InnoDB 是 MySQL 默认的存储引擎，它就是采用了 B+ 树作为索引的数据结构。
 要设计一个 MySQL 的索引数据结构，不仅仅考虑数据结构增删改的时间复杂度，更重要的是要考虑磁盘 I/0 的操作次数。
 因为索引和记录都是存放在硬盘，硬盘是一个非常慢的存储设备，我们在查询数据的时候，最好能在尽可能少的磁盘 I/0 的操作次数内完成。</p>
-<p>二分查找树虽然是一个天然的二分结构，能很好的利用二分查找快速定位数据，但是它存在一种极端的情况，每当插入的元素都是树内最大的元素，就会导致二分查找树退化成一个链表，此时查询复杂度就会从 O(logn)降低为 O(n)。
+<p>　　二分查找树虽然是一个天然的二分结构，能很好的利用二分查找快速定位数据，但是它存在一种极端的情况，每当插入的元素都是树内最大的元素，就会导致二分查找树退化成一个链表，此时查询复杂度就会从 O(logn)降低为 O(n)。
 为了解决二分查找树退化成链表的问题，就出现了自平衡二叉树，保证了查询操作的时间复杂度就会一直维持在 O(logn) 。但是它本质上还是一个二叉树，每个节点只能有 2 个子节点，随着元素的增多，树的高度会越来越高。
 而树的高度决定于磁盘  I/O 操作的次数，因为树是存储在磁盘中的，访问每个节点，都对应一次磁盘 I/O 操作，也就是说树的高度就等于每次查询数据时磁盘 IO 操作的次数，所以树的高度越高，就会影响查询性能。</p>
-<p>B 树和 B+ 都是通过多叉树的方式，会将树的高度变矮，所以这两个数据结构非常适合检索存于磁盘中的数据。
+<p>　　B 树和 B+ 都是通过多叉树的方式，会将树的高度变矮，所以这两个数据结构非常适合检索存于磁盘中的数据。
 但是 MySQL 默认的存储引擎 InnoDB 采用的是 B+ 作为索引的数据结构，原因有：
 B+ 树的非叶子节点不存放实际的记录数据，仅存放索引，因此数据量相同的情况下，相比存储即存索引又存记录的 B 树，B+树的非叶子节点可以存放更多的索引，因此 B+ 树可以比 B 树更「矮胖」，查询底层节点的磁盘 I/O次数会更少。
 B+ 树有大量的冗余节点（所有非叶子节点都是冗余索引），这些冗余索引让 B+ 树在插入、删除的效率都更高，比如删除根节点的时候，不会像 B 树那样会发生复杂的树的变化；
 B+ 树叶子节点之间用链表连接了起来，有利于范围查询，而 B 树要实现范围查询，因此只能通过树的遍历来完成范围查询，这会涉及多个节点的磁盘 I/O 操作，范围查询效率不如 B+ 树。</p>
-<h3 id="如何优化索引">如何优化索引
-</h3><h3 id="什么时候使用索引比较合适索引应该如何设计">什么时候使用索引比较合适，索引应该如何设计
-</h3><h3 id="聚簇索引和二级索引对比">聚簇索引和二级索引对比
-</h3><h3 id="什么是回表回表的优势和劣势">什么是回表，回表的优势和劣势
-</h3><h3 id="索引失效的场景">索引失效的场景
-</h3><h3 id="如何分页比较高效">如何分页比较高效
+<h3 id="索引的创建时机">索引的创建时机
+</h3><p>索引最大的好处是提高查询速度，但是索引也是有缺点的，比如：<br></p>
+<ul>
+<li>需要占用物理空间，数量越大，占用空间越大；<br></li>
+<li>创建索引和维护索引要耗费时间，这种时间随着数据量的增加而增大；<br></li>
+<li>会降低表的增删改的效率，因为每次增删改索引，B+ 树为了维护索引有序性，都需要进行动态维护。<br></li>
+</ul>
+<p>所以，索引不是万能钥匙，它也是根据场景来使用的。<br></p>
+<h4 id="什么时候需要创建索引">什么时候需要创建索引
+</h4><ul>
+<li>字段有唯一性限制的，比如商品码。<br></li>
+<li>经常用于 where 查询条件的字段，这样能够提高整个表的查询速度，如果查询条件不是一个字段，可以建立联合索引。<br></li>
+<li>经常用于 group by 和 order by 的字段，这样在查询的时候就不需要再去做一次排序了，因为我们都已经知道了建立索引之后在 B+Tree 中的记录都是排序好的。<br></li>
+</ul>
+<h4 id="什么时候不需要创建索引">什么时候不需要创建索引
+</h4><ul>
+<li>where 条件，group by，order by 里用不到的字段，索引的价值是快速定位，如果起不到定位的字段通常是不需要创建索引的，因为索引是会占用物理空间的。<br></li>
+<li>字段中存在大量重复数据，不需要创建索引，比如性别字段，只有男女，如果数据库表中，男女的记录分布均匀，那么无论搜索哪个值都可能得到一半的数据。在这些情况下，还不如不要索引，因为 MySQL 还有一个查询优化器，查询优化器发现某个值出现在表的数据行中的百分比很高的时候，它一般会忽略索引，进行全表扫描。<br></li>
+<li>经常更新的字段不用创建索引，比如不要对电商项目的用户余额建立索引，因为索引字段频繁修改，由于要维护 B+Tree的有序性，那么就需要频繁的重建索引，这个过程是会影响数据库性能的。<br></li>
+<li>表数据太少的时候，不需要创建索引。<br></li>
+</ul>
+<h3 id="索引的设计原则">索引的设计原则
+</h3><ul>
+<li>针对于数据量较大，且查询比较频繁的表建立索引。<br></li>
+<li>针对于常作为查询条件（where）、排序（order by）、分组（group by）操作的字段建立索引。<br></li>
+<li>尽量选择区分度高的列作为索引，尽量建立唯一索引，区分度越高，使用索引的效率越高。<br></li>
+<li>如果是字符串类型的字段，字段的长度较长，可以针对于字段的特点，建立前缀索引。<br></li>
+<li>尽量使用联合索引，减少单列索引，查询时，联合索引很多时候可以覆盖索引，节省存储空间，避免回表，提高查询效率。<br></li>
+<li>要控制索引的数量，索引并不是多多益善，索引越多，维护索引结构的代价也就越大，会影响增删改的效率。<br></li>
+<li>如果索引列不能存储NULL值，请在创建表时使用NOT NULL约束它。当优化器知道每列是否包含NULL值时，它可以更好地确定哪个索引最有效地用于查询。<br></li>
+</ul>
+<h3 id="索引失效的场景">索引失效的场景
+</h3><h3 id="索引的优化">索引的优化
+</h3><p>几种常见优化索引的方法：<br>
+　　1、前缀索引优化 <br>
+　　2、覆盖索引优化 <br>
+　　3、主键索引最好是自增的 <br>
+　　4、索引最好设置为 not null <br>
+　　5、防止索引失效 <br></p>
+<h4 id="前缀索引优化">前缀索引优化
+</h4><p>前缀索引（Prefix Index）专门用于优化长字符串字段的查询。<br>
+它的核心思想是：只对字符串的前几个字符建立索引，而不是对整个长字符串建索引。<br>
+这样既能大幅减少索引占用的磁盘空间，又能提高写入性能，同时还能享受索引带来的查询加速。<br></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="c1">-- 有一个 users 表，包含几百万用户，email 字段通常是 varchar(100)
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">users</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">email</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;jack@qq.com&#39;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">-- 如果直接给 email 建全字段索引
+</span></span></span><span class="line"><span class="cl"><span class="c1">-- 这个索引文件会非常巨大，极其消耗磁盘
+</span></span></span><span class="line"><span class="cl"><span class="c1">-- 并且每次插入或更新用户时，维护这个巨大索引的速度会很慢
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>如何科学地选择前缀长度？<br>
+　　1、计算全字段的唯一值总数。<br>
+　　2、测试不同前缀长度的区分度。<br>
+　　3、建立前缀索引<br></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">email</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">users</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">-- 假设结果是 1,000,000 个不同的邮箱
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">select</span><span class="w"> 
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="k">left</span><span class="p">(</span><span class="n">email</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span><span class="w"> </span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="k">left</span><span class="p">(</span><span class="n">email</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span><span class="w"> </span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="k">left</span><span class="p">(</span><span class="n">email</span><span class="p">,</span><span class="mi">5</span><span class="p">))</span><span class="w"> 
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">from</span><span class="w"> </span><span class="n">users</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">-- 前 3 个字符：只能区分 50,000 个（区分度 5% ）
+</span></span></span><span class="line"><span class="cl"><span class="c1">-- 前 4 个字符：能区分 950,000 个（区分度 95% ）
+</span></span></span><span class="line"><span class="cl"><span class="c1">-- 前 5 个字符：能区分 999,500 个（区分度 99.9% ）
+</span></span></span><span class="line"><span class="cl"><span class="c1">-- 结论：选择 4 是最划算的
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>前缀索引虽然好用，但有三个明显的局限性：<br>
+　　1、无法使用覆盖索引：由于索引里只有 前4个字符 ，MySQL 无法直接从索引里拿到完整的 email 值，必须强制回表。所以不能指望 select email from users 走覆盖索引。<br>
+　　2、group by / order by 失效：前缀索引的叶子节点是按 前4个字符 排序的，而不是按整个字符串排序。因此 order by email 无法利用这个索引直接输出结果，还是会触发 using filesort。<br>
+　　3、字符串翻转：多级子域名（如 <a class="link" href="https://www.acwing.com/problem/"  target="_blank" rel="noopener"
+    >www.acwing.com/problem/</a>，www.acwing.com/activity/），前缀都是 <a class="link" href="https://www.acwing.com"  target="_blank" rel="noopener"
+    >www.acwing.com</a>，区分度低。解决办法： 在代码里把字符串反转后存储，然后对反转后的字段建前缀索引。<br></p>
+<h3 id="如何分页比较高效">如何分页比较高效
 </h3><hr>
 
 </section>
