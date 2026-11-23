@@ -10,7 +10,7 @@
 <meta property='og:description' content="基础篇 增删改查的语法 增： 1 2 3 4 5 6 7 8 9 10 11 12 -- 给指定字段添加数据 insert into 表名 (字段名1, 字段名2, ...) values (值1, 值2, ...); -- 给指定字段批量添加数">
 <meta property='og:url' content='https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/'>
 <meta property='og:site_name' content='CY1218-coder'>
-<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:published_time' content='2026-10-01T21:32:35&#43;08:00'/><meta property='article:modified_time' content='2026-11-23T19:30:28&#43;08:00'/>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:published_time' content='2026-10-01T21:32:35&#43;08:00'/><meta property='article:modified_time' content='2026-11-23T22:07:06&#43;08:00'/>
 <meta name="twitter:title" content="MySQL核心知识">
 <meta name="twitter:description" content="基础篇 增删改查的语法 增： 1 2 3 4 5 6 7 8 9 10 11 12 -- 给指定字段添加数据 insert into 表名 (字段名1, 字段名2, ...) values (值1, 值2, ...); -- 给指定字段批量添加数">
     <link rel="shortcut icon" href="/favicon.ico" />
@@ -301,10 +301,26 @@
             <li><a href="#防止索引失效">防止索引失效</a></li>
           </ol>
         </li>
-        <li><a href="#countcount1">count(*)、count(1)</a></li>
-        <li><a href="#如何分页比较高效">如何分页比较高效</a></li>
+        <li><a href="#count函数">count函数</a>
+          <ol>
+            <li><a href="#count是什么">count是什么</a></li>
+            <li><a href="#count字段-执行过程">count(字段) 执行过程</a></li>
+            <li><a href="#count主键字段-执行过程">count(主键字段) 执行过程</a></li>
+            <li><a href="#count1-执行过程">count(1) 执行过程</a></li>
+            <li><a href="#count-执行过程">count(*) 执行过程</a></li>
+            <li><a href="#count-的优化">count(*) 的优化</a></li>
+          </ol>
+        </li>
+        <li><a href="#如何分页比较高效">如何分页比较高效</a>
+          <ol>
+            <li><a href="#两种-limit-的执行过程">两种 limit 的执行过程</a></li>
+            <li><a href="#基于主键索引的-limit-执行过程">基于主键索引的 limit 执行过程</a></li>
+            <li><a href="#基于非主键索引的-limit-执行过程">基于非主键索引的 limit 执行过程</a></li>
+          </ol>
+        </li>
       </ol>
     </li>
+    <li><a href="#事务篇">事务篇</a></li>
   </ol>
 </nav>
         </div>
@@ -369,7 +385,7 @@
 
 
 
-                <time class="article-time--modified" datetime="2026-11-23T19:30:28&#43;08:00">最后更新于 2026-11-23</time>
+                <time class="article-time--modified" datetime="2026-11-23T22:07:06&#43;08:00">最后更新于 2026-11-23</time>
             </div>
         
 
@@ -1417,9 +1433,293 @@ explain 执行计划各字段含义：<br></p>
 <li>Using filesort：当查询语句中包含 group by 操作，而且无法利用索引完成排序操作的时候，这时不得不选择相应的排序算法进行，甚至可能会通过文件排序，效率是很低的，所以要避免这种问题的出现。<br></li>
 <li>Using temporary：使了用临时表保存中间结果，MySQL 在对查询结果排序时使用临时表，常见于排序 order by 和分组查询 group by。效率低，要避免这种问题的出现。<br></li>
 </ul>
-<h3 id="countcount1">count(*)、count(1)
-</h3><h3 id="如何分页比较高效">如何分页比较高效
-</h3><hr>
+<h3 id="count函数">count函数
+</h3><p>按照性能排序：<br>
+　　count(*) = count(1) &gt; count(主键字段) &gt; count(字段)<br></p>
+<h4 id="count是什么">count是什么
+</h4><p>count() 是一个聚合函数，函数的参数不仅可以是字段名，也可以是其他任意表达式，该函数作用是统计符合查询条件的记录中，函数指定的参数不为 NULL 的记录有多少个。<br></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="c1">-- count() 函数的参数是字段名
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">t_order</span><span class="p">;</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>这条语句是统计 t_order 表中，name 字段不为 NULL 的记录 有多少个。如果某一条记录中的 name 字段的值为 NULL，则就不会被统计进去。<br></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="c1">-- count() 函数的参数是数字 1 这个表达式
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">t_order</span><span class="p">;</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>这条语句是统计 t_order 表中，1 这个表达式不为 NULL 的记录 有多少个。<br>
+1 这个表达式就是单纯数字，它永远都不是 NULL，所以上面这条语句，其实是在统计表中有多少个记录。<br></p>
+<h4 id="count字段-执行过程">count(字段) 执行过程
+</h4><p>count(字段) 的执行效率是最差的。<br></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="c1">-- name不是索引，普通字段
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">t_order</span><span class="p">;</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>对于这个查询来说，会采用全表扫描的方式来计数，所以它的执行效率是比较差的。<br></p>
+<h4 id="count主键字段-执行过程">count(主键字段) 执行过程
+</h4><ul>
+<li>在通过 count 函数统计有多少个记录时，MySQL 的 server 层会维护一个名叫 count 的变量。<br></li>
+<li>server 层会循环向 InnoDB 读取一条记录，如果 count 函数指定的参数不为 NULL，那么就会将变量 count 加 1，直到符合查询的全部记录被读完，就退出循环。最后将 count 变量的值发送给客户端。<br></li>
+<li>InnoDB 是通过 B+ 树来保存记录的，根据索引的类型又分为聚簇索引和二级索引，它们区别在于，聚簇索引的叶子节点存放的是实际数据，而二级索引的叶子节点存放的是主键值，而不是实际数据。<br></li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="c1">-- id 为主键值
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">t_order</span><span class="p">;</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><ul>
+<li>如果表里只有主键索引，没有二级索引时，那么，InnoDB 循环遍历聚簇索引，将读取到的记录返回给 server 层，然后读取记录中的 id 值，就会用 id 值判断是否为 NULL，如果不为 NULL，就将 count 变量加 1。<br></li>
+<li>但是，如果表里有二级索引时，InnoDB 循环遍历的对象就不是聚簇索引，而是二级索引。<br></li>
+<li>因为相同数量的二级索引记录比聚簇索引记录占用更少的存储空间，所以二级索引树比聚簇索引树小，这样遍历二级索引的 I/O 成本比遍历聚簇索引的 I/O 成本小，因此 优化器 优先选择的是二级索引。<br></li>
+</ul>
+<h4 id="count1-执行过程">count(1) 执行过程
+</h4><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">t_order</span><span class="p">;</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><ul>
+<li>如果表里只有主键索引，没有二级索引时。<br></li>
+<li>那么，InnoDB 循环遍历聚簇索引（主键索引），将读取到的记录返回给 server 层，但是不会读取记录中的任何字段的值，因为 count 函数的参数是 1，不是字段，所以不需要读取记录中的字段值。参数 1 很明显并不是 NULL，因此 server 层每从 InnoDB 读取到一条记录，就将 count 变量加 1。<br></li>
+<li>可以看到，count(1) 相比 count(主键字段) 少一个步骤，就是不需要读取记录中的字段值，所以通常会说 count(1) 执行效率会比 count(主键字段) 高一点。<br></li>
+<li>不过需要注意，上面这个结论只适用于 表里没有任何二级索引、只能扫聚簇索引 这种场景。如果表上存在二级索引，优化器会把 count(主键字段) 也改写成扫描 key_len 最小的二级索引，此时 count(1) 和 count(主键字段) 的执行过程完全一致，性能上没有差异。<br></li>
+<li>但是，如果表里有二级索引时，InnoDB 循环遍历的对象就是二级索引了。<br></li>
+</ul>
+<h4 id="count-执行过程">count(*) 执行过程
+</h4><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="err">其实等于</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="err">使用</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w">  </span><span class="err">时，</span><span class="n">MySQL</span><span class="w"> </span><span class="err">会将</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="err">参数转化为参数</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="err">来处理</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>所以，count(<em>) 执行过程跟 count(1) 执行过程基本一样的，性能没有什么差异。<br>
+而且 MySQL 会对 count(</em>)和 count(1) 有个优化，如果有多个二级索引的时候，优化器会使用 key_len 最小的二级索引进行扫描。<br>
+只有当没有二级索引的时候，才会采用主键索引来进行统计。<br></p>
+<h4 id="count-的优化">count(*) 的优化
+</h4><p>如果对一张大表经常用 count(*) 来做统计，其实是很不好的。<br>
+面对大表的记录统计，我们有没有什么其他更好的办法呢？<br>
+　　1、近似值：<br>
+　　如果你的业务对于统计个数不需要很精确，比如搜索引擎在搜索关键词的时候，给出的搜索结果条数是一个大概值。这时，我们就可以使用 show table status 或者 explain 命令来表进行估算。执行 explain 命令效率是很高的，因为它并不会真正的去查询。<br>
+　　2、额外表保存计数值：<br>
+　　如果是想精确的获取表的记录总数，我们可以将这个计数值保存到单独的一张计数表中。在新增和删除操作时，我们需要额外维护这个计数表。<br></p>
+<h3 id="如何分页比较高效">如何分页比较高效
+</h3><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="c1">-- id 主键
+</span></span></span><span class="line"><span class="cl"><span class="c1">-- user_name 非主键索引
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261123004.png"
+	width="1230"
+	height="768"
+	srcset="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261123004_hu2191726963331646137.png 480w, /p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261123004_hu194120479744403510.png 1024w"
+	loading="lazy"
+	
+	
+		class="gallery-image" 
+		data-flex-grow="160"
+		data-flex-basis="384px"
+	
+></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="c1">-- 为了实现分页，容易联想到下面的sql语句
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">page</span><span class="w"> </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="k">offset</span><span class="p">,</span><span class="w"> </span><span class="k">size</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">-- 一页有10条数据
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">-- 第一页就是下面这样的sql语句
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">page</span><span class="w"> </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">-- 第一百页就是下面这样的sql语句
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">page</span><span class="w"> </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="mi">990</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">-- 同样都是拿10条数据，查第一页和第一百页的查询速度是一样的吗？
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><h4 id="两种-limit-的执行过程">两种 limit 的执行过程
+</h4><p>上面的两种查询方式。对应 limit offset, size 和 limit size 两种方式。<br>
+而其实 limit size，相当于 limit 0, size。也就是从 0 开始取 size 条数据。<br>
+也就是说，两种方式的区别在于 offset 是否为 0。<br></p>
+<p>limit sql的内部执行逻辑：<br>
+<img src="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261123005.png"
+	width="1070"
+	height="1128"
+	srcset="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261123005_hu5212190874893999986.png 480w, /p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261123005_hu4973521987744905165.png 1024w"
+	loading="lazy"
+	
+	
+		class="gallery-image" 
+		data-flex-grow="94"
+		data-flex-basis="227px"
+	
+>
+mysql 内部分为 server 层和存储引擎层。一般情况下存储引擎都用 InnoDB。<br>
+server层有很多模块，其中需要关注的是执行器是用于跟存储引擎打交道的组件。<br>
+执行器可以通过调用存储引擎提供的接口，将一行行数据取出，当这些数据完全符合要求（比如满足其他where条件），则会放到结果集中，最后返回给调用mysql的客户端（go、java写的应用程序）。<br></p>
+<h4 id="基于主键索引的-limit-执行过程">基于主键索引的 limit 执行过程
+</h4><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="c1">-- id 主键
+</span></span></span><span class="line"><span class="cl"><span class="c1">-- offset = 0
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">page</span><span class="w"> </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>server 层会调用 InnoDB 的接口，在 InnoDB 里的主键索引中获取到第 0 到 10 条完整行数据，依次返回给 server 层，并放到 server 层的结果集中，返回给客户端。<br></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="c1">-- id 主键
+</span></span></span><span class="line"><span class="cl"><span class="c1">-- offset = 990
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">page</span><span class="w"> </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="mi">990</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>server 层会调用 InnoDB 的接口，由于这次的 offset = 990，会在 InnoDB 里的主键索引中获取到第 0 到（990 + 10）条完整行数据，返回给server层之后根据 offset 的值挨个抛弃，最后只留下最后面的 size 条，也就是 10 条数据，放到 server 层的结果集中，返回给客户端。
+可以看出，当 offset ≠ 0 时，server 层会从引擎层获取到很多无用的数据，从而耗费大量时间。<br></p>
+<p>因此，mysql 查询中 limit 990,10 会比 limit 10 更慢。原因是 limit 990,10 会取出 990+10 条数据，并抛弃前 990 条。
+那这种情况有办法优化吗？<br></p>
+<p>可以看出，当 offset ≠ 0 时，server 层会从引擎层获取到很多无用的数据，而当 select 后面是 * 时，就需要拷贝完整的行信息，拷贝完整数据跟只拷贝行数据里的其中一两个列字段耗时是不同的，这就让原本就耗时的操作变得更加耗时。<br></p>
+<p>因为前面的 offset 条数据最后都是不要的，所以可以将 sql 语句修改成：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">page</span><span class="w"> 
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">where</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">page</span><span class="w"> </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="mi">990</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="mi">10</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">-- 这条 sql 语句，先执行子查询
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">select</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">page</span><span class="w"> </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="mi">990</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">-- 这个操作，将在 InnoDB 中的主键索引中获取到 990+1 条数据
+</span></span></span><span class="line"><span class="cl"><span class="c1">-- 然后 server 层会抛弃前 990 条，只保留最后一条数据的id
+</span></span></span><span class="line"><span class="cl"><span class="c1">-- 不同的地方在于，在返回 server 层的过程中
+</span></span></span><span class="line"><span class="cl"><span class="c1">-- 只会拷贝数据行内的 id 这一列，而不会拷贝数据行的所有列
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">-- 在拿到了上面的 id 之后，sql 就变成了
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">page</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="p">(</span><span class="mi">990</span><span class="p">)</span><span class="w"> </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="mi">10</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>这样 InnoDB 再走一次主键索引，通过 B+ 树快速定位到 id = 990 的行数据，然后向后取 10 条数据。<br></p>
+<h4 id="基于非主键索引的-limit-执行过程">基于非主键索引的 limit 执行过程
+</h4><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="c1">-- user_name 非主键索引
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">page</span><span class="w"> </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">user_name</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>server 层会调用 InnoDB 的接口，在 InnoDB 里的非主键索引中获取到第 0 条数据对应的主键 id 后，回表到主键索引中找到对应的完整行数据，然后返回给 server 层，server 层将其放到结果集中，返回给客户端。<br>
+当 offset &gt; 0 时，且 offset 的值较小时，逻辑也类似，区别在于，offset &gt; 0 时会丢弃前面的 offset 条数据。<br>
+也就是说非主键索引的 limit 过程，比主键索引的 limit 过程，多了个回表的消耗。<br></p>
+<p>但当 offset 变得非常大时，比如 600万，此时执行 explain。可以看到 type 那一栏显示的是 ALL，也就是全表扫描。
+这是因为 server 层的优化器，会在执行器执行 sql 语句前，判断下哪种执行计划的代价更小。
+很明显，优化器在看到非主键索引的 600万 次回表之后，摇了摇头，还不如全表一条条记录去判断算了，于是选择了全表扫描。
+因此，当 offset 过大时，非主键索引查询非常容易变成全表扫描。<br></p>
+<p>这种情况也能通过一些方式去优化：<br></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">from</span><span class="w"> </span><span class="n">page</span><span class="w"> </span><span class="n">t1</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">page</span><span class="w"> </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">user_name</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="mi">6000000</span><span class="p">,</span><span class="mi">100</span><span class="p">)</span><span class="w"> </span><span class="n">t2</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">where</span><span class="w"> </span><span class="n">t1</span><span class="p">.</span><span class="n">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">t2</span><span class="p">.</span><span class="n">id</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">-- 子查询
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">select</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">page</span><span class="w"> </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">user_name</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="mi">6000000</span><span class="p">,</span><span class="w"> </span><span class="mi">100</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>通过子查询。先走 InnoDB 层的 user_name 非主键索引取出 id，因为只拿主键 id，不需要回表，所以这块性能会稍微快点，在返回 server 层之后，同样抛弃前 600w 条数据，保留最后的 100 个id。然后再用这 100 个 id 去跟 t1 表做 id 匹配，此时走的是主键索引，将匹配到的 100 条行数据返回。这样就绕开了之前的 600w 条数据的回表。<br></p>
+<p>像这种，当 offset 变得超大时，比如到了百万千万的量级，问题就突然变得严肃了。
+这里就产生了个专门的术语，叫深度分页。</p>
+<hr>
+<h2 id="事务篇">事务篇
+</h2><p>事务的四个特性</p>
+<p>脏读、不可重复读、幻读是什么</p>
+<p>事务的四个隔离级别</p>
+<p>什么是Read View，讲解一下它的结构</p>
+<p>Read View它是如何解决脏读、不可重复读、幻读问题的</p>
+<p>可重复读隔离级别解决幻读了吗</p>
+<p>可重复读隔离级别执行Update会发生什么</p>
+<hr>
 
 </section>
 
