@@ -1331,13 +1331,278 @@ server层有很多模块，其中需要关注的是执行器是用于跟存储�
 这里就产生了个专门的术语，叫深度分页。&lt;/p&gt;
 &lt;hr&gt;
 &lt;h2 id=&#34;事务篇&#34;&gt;事务篇
-&lt;/h2&gt;&lt;p&gt;事务的四个特性&lt;/p&gt;
-&lt;p&gt;脏读、不可重复读、幻读是什么&lt;/p&gt;
-&lt;p&gt;事务的四个隔离级别&lt;/p&gt;
-&lt;p&gt;什么是Read View，讲解一下它的结构&lt;/p&gt;
-&lt;p&gt;Read View它是如何解决脏读、不可重复读、幻读问题的&lt;/p&gt;
-&lt;p&gt;可重复读隔离级别解决幻读了吗&lt;/p&gt;
-&lt;p&gt;可重复读隔离级别执行Update会发生什么&lt;/p&gt;
+&lt;/h2&gt;&lt;h3 id=&#34;事务的简介&#34;&gt;事务的简介
+&lt;/h3&gt;&lt;p&gt;&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124001.png&#34;
+	width=&#34;1842&#34;
+	height=&#34;822&#34;
+	srcset=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124001_hu7770668107411028477.png 480w, https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124001_hu17092598979697560837.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;224&#34;
+		data-flex-basis=&#34;537px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sql&#34; data-lang=&#34;sql&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;-- 查看事务提交方式
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;select&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;o&#34;&gt;@@&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;autocommit&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;-- 设置事务提交方式
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;set&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;o&#34;&gt;@@&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;autocommit&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;-- 提交事务
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;commit&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;-- 回滚事务
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;rollback&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;-- 开启事务
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;start&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;k&#34;&gt;transaction&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;err&#34;&gt;或&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;k&#34;&gt;begin&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h3 id=&#34;事务的四大特性&#34;&gt;事务的四大特性
+&lt;/h3&gt;&lt;p&gt;&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124002.png&#34;
+	width=&#34;1482&#34;
+	height=&#34;1200&#34;
+	srcset=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124002_hu1450580271228657037.png 480w, https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124002_hu6051289047145277341.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;123&#34;
+		data-flex-basis=&#34;296px&#34;
+	
+&gt;
+InnoDB 引擎通过什么技术来保证事务的这四个特性：&lt;br&gt;
+　　1、原子性是通过 undo log（回滚日志）来保证的&lt;br&gt;
+　　2、一致性则是通过 持久性+原子性+隔离性 来保证&lt;br&gt;
+　　3、隔离性是通过 MVCC（多版本并发控制）或锁机制来保证的&lt;br&gt;
+　　4、持久性是通过 redo log（重做日志）来保证的&lt;br&gt;&lt;/p&gt;
+&lt;h3 id=&#34;并发事务问题&#34;&gt;并发事务问题
+&lt;/h3&gt;&lt;p&gt;&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124003.png&#34;
+	width=&#34;1536&#34;
+	height=&#34;1090&#34;
+	srcset=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124003_hu17043388672838873957.png 480w, https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124003_hu1413779856521745627.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;140&#34;
+		data-flex-basis=&#34;338px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124004.png&#34;
+	width=&#34;1920&#34;
+	height=&#34;500&#34;
+	srcset=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124004_hu13851356666331216593.png 480w, https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124004_hu1025216836950764386.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;384&#34;
+		data-flex-basis=&#34;921px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;h3 id=&#34;事务的四个隔离级别&#34;&gt;事务的四个隔离级别
+&lt;/h3&gt;&lt;p&gt;&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124005.png&#34;
+	width=&#34;2274&#34;
+	height=&#34;544&#34;
+	srcset=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124005_hu1647556704427259071.png 480w, https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124005_hu9266600780605287839.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;418&#34;
+		data-flex-basis=&#34;1003px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124006.png&#34;
+	width=&#34;2188&#34;
+	height=&#34;680&#34;
+	srcset=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124006_hu3347527113093461869.png 480w, https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124006_hu14466785269789460948.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;321&#34;
+		data-flex-basis=&#34;772px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;h3 id=&#34;四种隔离级别的具体实现&#34;&gt;四种隔离级别的具体实现
+&lt;/h3&gt;&lt;p&gt;&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124007.png&#34;
+	width=&#34;1898&#34;
+	height=&#34;368&#34;
+	srcset=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124007_hu8964166404387467643.png 480w, https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124007_hu5365185157523076133.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;515&#34;
+		data-flex-basis=&#34;1237px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;注意：执行 开始事务 命令，并不意味着启动了事务。&lt;br&gt;
+在 MySQL 有两种开启事务的命令，分别是：&lt;br&gt;
+　　1、begin/start transaction 命令。执行这个命令后，并不代表事务启动了。只有在执行这个命令后，执行了第一条 select 语句，才是事务真正启动的时机；&lt;br&gt;
+　　2、start transaction with consistent snapshot 命令。执行这个命令后，就会马上启动事务。&lt;br&gt;&lt;/p&gt;
+&lt;h3 id=&#34;read-view-在-mvcc-里是如何工作的&#34;&gt;Read View 在 MVCC 里是如何工作的
+&lt;/h3&gt;&lt;p&gt;&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124008.png&#34;
+	width=&#34;2090&#34;
+	height=&#34;928&#34;
+	srcset=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124008_hu13725502383019347558.png 480w, https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124008_hu5450314122915676930.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;225&#34;
+		data-flex-basis=&#34;540px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124009.png&#34;
+	width=&#34;1644&#34;
+	height=&#34;578&#34;
+	srcset=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124009_hu14220130770810032196.png 480w, https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124009_hu16050616312562791359.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;284&#34;
+		data-flex-basis=&#34;682px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;h3 id=&#34;读提交-是如何工作的&#34;&gt;读提交 是如何工作的
+&lt;/h3&gt;&lt;p&gt;Read Committed：在事务中每一次执行快照读时生成 ReadView。&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124010.png&#34;
+	width=&#34;2044&#34;
+	height=&#34;574&#34;
+	srcset=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124010_hu11239117273631099353.png 480w, https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124010_hu9802182562701191920.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;读提交&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;356&#34;
+		data-flex-basis=&#34;854px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;两次快照读读取的是哪个版本?&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124011.png&#34;
+	width=&#34;2272&#34;
+	height=&#34;952&#34;
+	srcset=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124011_hu16823463477137662782.png 480w, https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124011_hu5445560398284656929.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;第一次快照读&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;238&#34;
+		data-flex-basis=&#34;572px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124012.png&#34;
+	width=&#34;2274&#34;
+	height=&#34;948&#34;
+	srcset=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124012_hu14346948203209746577.png 480w, https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124012_hu7807984587135732415.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;第二次快照读&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;239&#34;
+		data-flex-basis=&#34;575px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;Read View 如何解决脏读？&lt;br&gt;
+　　在 RC 级别下，每次执行 select 都会生成一个新的 Read View。&lt;br&gt;
+　　如果另一个事务还没提交，它的 trx_id 必定在当前生成的 Read View 的 m_ids（活跃列表）里。&lt;br&gt;
+　　根据判定规则，该版本不可见。&lt;br&gt;
+　　只能去 undo log 里找上一个已经提交的历史版本。&lt;br&gt;
+　　因此，绝不可能读到未提交的数据，脏读被解决。&lt;br&gt;&lt;/p&gt;
+&lt;h3 id=&#34;可重复读-是如何工作的&#34;&gt;可重复读 是如何工作的
+&lt;/h3&gt;&lt;p&gt;Repeatable Read：仅在事务中第一次执行快照读时生成 ReadView，后续复用该 ReadView。&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124013.png&#34;
+	width=&#34;2376&#34;
+	height=&#34;676&#34;
+	srcset=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124013_hu1791355786463300011.png 480w, https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124013_hu15942227246827253642.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;可重复读&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;351&#34;
+		data-flex-basis=&#34;843px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;Read View 如何解决不可重复读？&lt;br&gt;
+　　在 RR 级别下，只在事务内第一次执行 select 时生成 Read View，后续复用该 ReadView。&lt;br&gt;
+　　假设事务 A 第一次读生成了 Read View。随后事务 B 修改数据并提交了。&lt;br&gt;
+　　事务 A 再次 select 时，用的还是旧的那个 Read View。&lt;br&gt;
+　　对于事务 B 的修改（trx_id 在旧的 m_ids 里），判定为不可见。&lt;br&gt;
+　　所以事务 A 每次读到的数据都完全相同，不可重复读被解决。&lt;br&gt;&lt;/p&gt;
+&lt;h3 id=&#34;可重复读-避免幻读&#34;&gt;可重复读 避免幻读
+&lt;/h3&gt;&lt;p&gt;Read View它是如何解决脏读、不可重复读、幻读问题的
+Read View 如何解决幻读（仅限于 RR 级别）？&lt;/p&gt;
+&lt;p&gt;幻读：同一个事务内，两次查询符合条件的数据行数不一样（因为中间别的事务插入或删除了数据）。&lt;/p&gt;
+&lt;p&gt;解决原理：
+快照读（普通 SELECT）：因为 RR 级别复用了第一次的 Read View，新插入的数据（trx_id 往往大于旧 Read View 的 max_trx_id）判定为不可见，所以你在快照里看不到新插入的行，解决了快照读的幻读。&lt;/p&gt;
+&lt;p&gt;当前读（SELECT &amp;hellip; FOR UPDATE / UPDATE / DELETE）：由于 Read View 对当前读无效，RR 级别下 InnoDB 使用了 Next-Key Lock（记录锁 + 间隙锁）。当你执行当前读时，不仅锁住现有的记录，还锁住记录之间的“间隙”，直接阻止其他事务在间隙里插入新数据。两者结合，RR 级别彻底解决了幻读。&lt;/p&gt;
+&lt;p&gt;可重复读隔离级别解决幻读了吗&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;可重复读隔离级别执行Update会发生什么&lt;br&gt;&lt;/p&gt;
+&lt;hr&gt;
+&lt;h2 id=&#34;锁篇&#34;&gt;锁篇
+&lt;/h2&gt;&lt;p&gt;MySQL中的锁有哪些？&lt;/p&gt;
+&lt;p&gt;讲一下全局锁、表级锁、行级锁&lt;/p&gt;
+&lt;p&gt;表级锁都有哪些锁，分别讲一下&lt;/p&gt;
+&lt;p&gt;行级锁都有哪些锁，分别讲一下&lt;/p&gt;
+&lt;p&gt;记录锁+间隙锁可以防止删除操作而导致的幻读吗&lt;/p&gt;
+&lt;p&gt;MySQL死锁了怎么办？&lt;/p&gt;
+&lt;hr&gt;
+&lt;h2 id=&#34;日志篇&#34;&gt;日志篇
+&lt;/h2&gt;&lt;p&gt;介绍下MySQL中三种日志及作用&lt;/p&gt;
+&lt;p&gt;undo log字段结构，是如何回滚的？&lt;/p&gt;
+&lt;p&gt;redo log什么时候刷盘&lt;/p&gt;
+&lt;p&gt;redo log写满了怎么办&lt;/p&gt;
+&lt;p&gt;redo log和binlog区别&lt;/p&gt;
+&lt;p&gt;主从复制的实现方法&lt;/p&gt;
+&lt;p&gt;binlog什么时候刷盘&lt;/p&gt;
+&lt;p&gt;update 语句的执行过程&lt;/p&gt;
+&lt;p&gt;update为什么要两阶段提交，讲一下两阶段提交的过程&lt;/p&gt;
+&lt;p&gt;提交时异常重启会发生什么问题&lt;/p&gt;
+&lt;p&gt;MySQL的I/O很高，如何优化&lt;/p&gt;
+&lt;hr&gt;
+&lt;h2 id=&#34;内存篇&#34;&gt;内存篇
+&lt;/h2&gt;&lt;p&gt;什么是Buffer Pool&lt;/p&gt;
+&lt;p&gt;为什么要有Buffer Pool&lt;/p&gt;
+&lt;p&gt;Buffer Pool的结构&lt;/p&gt;
+&lt;p&gt;如何管理Buffer Pool&lt;/p&gt;
+&lt;hr&gt;
+&lt;h2 id=&#34;引擎篇&#34;&gt;引擎篇
+&lt;/h2&gt;&lt;p&gt;讲一下你对MySQL引擎的了解，并说出常见的引擎&lt;/p&gt;
+&lt;p&gt;InnoDB和MyISAM的区别&lt;/p&gt;
+&lt;p&gt;InnoDB 引擎的底层架构&lt;/p&gt;
+&lt;p&gt;两个引擎的使用场景，如何选择&lt;/p&gt;
+&lt;hr&gt;
+&lt;h2 id=&#34;mvcc-篇&#34;&gt;MVCC 篇
+&lt;/h2&gt;&lt;p&gt;什么是MVCC，解决了什么问题&lt;/p&gt;
+&lt;p&gt;MVCC是如何实现的&lt;/p&gt;
+&lt;p&gt;什么是当前读和快照读&lt;/p&gt;
+&lt;p&gt;Read View的可见性规则&lt;/p&gt;
+&lt;p&gt;回滚的流程的什么样的&lt;/p&gt;
+&lt;p&gt;RC和RR隔离界别下MVCC区别&lt;/p&gt;
 &lt;hr&gt;
 </description>
         </item>

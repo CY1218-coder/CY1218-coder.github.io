@@ -10,7 +10,7 @@
 <meta property='og:description' content="基础篇 增删改查的语法 增： 1 2 3 4 5 6 7 8 9 10 11 12 -- 给指定字段添加数据 insert into 表名 (字段名1, 字段名2, ...) values (值1, 值2, ...); -- 给指定字段批量添加数">
 <meta property='og:url' content='https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/'>
 <meta property='og:site_name' content='CY1218-coder'>
-<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:published_time' content='2026-10-01T21:32:35&#43;08:00'/><meta property='article:modified_time' content='2026-11-23T22:07:06&#43;08:00'/>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:published_time' content='2026-10-01T21:32:35&#43;08:00'/><meta property='article:modified_time' content='2026-11-24T18:39:07&#43;08:00'/>
 <meta name="twitter:title" content="MySQL核心知识">
 <meta name="twitter:description" content="基础篇 增删改查的语法 增： 1 2 3 4 5 6 7 8 9 10 11 12 -- 给指定字段添加数据 insert into 表名 (字段名1, 字段名2, ...) values (值1, 值2, ...); -- 给指定字段批量添加数">
     <link rel="shortcut icon" href="/favicon.ico" />
@@ -320,7 +320,24 @@
         </li>
       </ol>
     </li>
-    <li><a href="#事务篇">事务篇</a></li>
+    <li><a href="#事务篇">事务篇</a>
+      <ol>
+        <li><a href="#事务的简介">事务的简介</a></li>
+        <li><a href="#事务的四大特性">事务的四大特性</a></li>
+        <li><a href="#并发事务问题">并发事务问题</a></li>
+        <li><a href="#事务的四个隔离级别">事务的四个隔离级别</a></li>
+        <li><a href="#四种隔离级别的具体实现">四种隔离级别的具体实现</a></li>
+        <li><a href="#read-view-在-mvcc-里是如何工作的">Read View 在 MVCC 里是如何工作的</a></li>
+        <li><a href="#读提交-是如何工作的">读提交 是如何工作的</a></li>
+        <li><a href="#可重复读-是如何工作的">可重复读 是如何工作的</a></li>
+        <li><a href="#可重复读-避免幻读">可重复读 避免幻读</a></li>
+      </ol>
+    </li>
+    <li><a href="#锁篇">锁篇</a></li>
+    <li><a href="#日志篇">日志篇</a></li>
+    <li><a href="#内存篇">内存篇</a></li>
+    <li><a href="#引擎篇">引擎篇</a></li>
+    <li><a href="#mvcc-篇">MVCC 篇</a></li>
   </ol>
 </nav>
         </div>
@@ -385,7 +402,7 @@
 
 
 
-                <time class="article-time--modified" datetime="2026-11-23T22:07:06&#43;08:00">最后更新于 2026-11-23</time>
+                <time class="article-time--modified" datetime="2026-11-24T18:39:07&#43;08:00">最后更新于 2026-11-24</time>
             </div>
         
 
@@ -1712,13 +1729,278 @@ server层有很多模块，其中需要关注的是执行器是用于跟存储�
 这里就产生了个专门的术语，叫深度分页。</p>
 <hr>
 <h2 id="事务篇">事务篇
-</h2><p>事务的四个特性</p>
-<p>脏读、不可重复读、幻读是什么</p>
-<p>事务的四个隔离级别</p>
-<p>什么是Read View，讲解一下它的结构</p>
-<p>Read View它是如何解决脏读、不可重复读、幻读问题的</p>
-<p>可重复读隔离级别解决幻读了吗</p>
-<p>可重复读隔离级别执行Update会发生什么</p>
+</h2><h3 id="事务的简介">事务的简介
+</h3><p><img src="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124001.png"
+	width="1842"
+	height="822"
+	srcset="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124001_hu7770668107411028477.png 480w, /p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124001_hu17092598979697560837.png 1024w"
+	loading="lazy"
+	
+	
+		class="gallery-image" 
+		data-flex-grow="224"
+		data-flex-basis="537px"
+	
+></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="c1">-- 查看事务提交方式
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">select</span><span class="w"> </span><span class="o">@@</span><span class="n">autocommit</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">-- 设置事务提交方式
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">set</span><span class="w"> </span><span class="o">@@</span><span class="n">autocommit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">-- 提交事务
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">commit</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">-- 回滚事务
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">rollback</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c1">-- 开启事务
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">start</span><span class="w"> </span><span class="k">transaction</span><span class="w"> </span><span class="err">或</span><span class="w"> </span><span class="k">begin</span><span class="p">;</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="事务的四大特性">事务的四大特性
+</h3><p><img src="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124002.png"
+	width="1482"
+	height="1200"
+	srcset="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124002_hu1450580271228657037.png 480w, /p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124002_hu6051289047145277341.png 1024w"
+	loading="lazy"
+	
+	
+		class="gallery-image" 
+		data-flex-grow="123"
+		data-flex-basis="296px"
+	
+>
+InnoDB 引擎通过什么技术来保证事务的这四个特性：<br>
+　　1、原子性是通过 undo log（回滚日志）来保证的<br>
+　　2、一致性则是通过 持久性+原子性+隔离性 来保证<br>
+　　3、隔离性是通过 MVCC（多版本并发控制）或锁机制来保证的<br>
+　　4、持久性是通过 redo log（重做日志）来保证的<br></p>
+<h3 id="并发事务问题">并发事务问题
+</h3><p><img src="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124003.png"
+	width="1536"
+	height="1090"
+	srcset="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124003_hu17043388672838873957.png 480w, /p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124003_hu1413779856521745627.png 1024w"
+	loading="lazy"
+	
+	
+		class="gallery-image" 
+		data-flex-grow="140"
+		data-flex-basis="338px"
+	
+></p>
+<p><img src="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124004.png"
+	width="1920"
+	height="500"
+	srcset="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124004_hu13851356666331216593.png 480w, /p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124004_hu1025216836950764386.png 1024w"
+	loading="lazy"
+	
+	
+		class="gallery-image" 
+		data-flex-grow="384"
+		data-flex-basis="921px"
+	
+></p>
+<h3 id="事务的四个隔离级别">事务的四个隔离级别
+</h3><p><img src="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124005.png"
+	width="2274"
+	height="544"
+	srcset="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124005_hu1647556704427259071.png 480w, /p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124005_hu9266600780605287839.png 1024w"
+	loading="lazy"
+	
+	
+		class="gallery-image" 
+		data-flex-grow="418"
+		data-flex-basis="1003px"
+	
+></p>
+<p><img src="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124006.png"
+	width="2188"
+	height="680"
+	srcset="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124006_hu3347527113093461869.png 480w, /p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124006_hu14466785269789460948.png 1024w"
+	loading="lazy"
+	
+	
+		class="gallery-image" 
+		data-flex-grow="321"
+		data-flex-basis="772px"
+	
+></p>
+<h3 id="四种隔离级别的具体实现">四种隔离级别的具体实现
+</h3><p><img src="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124007.png"
+	width="1898"
+	height="368"
+	srcset="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124007_hu8964166404387467643.png 480w, /p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124007_hu5365185157523076133.png 1024w"
+	loading="lazy"
+	
+	
+		class="gallery-image" 
+		data-flex-grow="515"
+		data-flex-basis="1237px"
+	
+></p>
+<p>注意：执行 开始事务 命令，并不意味着启动了事务。<br>
+在 MySQL 有两种开启事务的命令，分别是：<br>
+　　1、begin/start transaction 命令。执行这个命令后，并不代表事务启动了。只有在执行这个命令后，执行了第一条 select 语句，才是事务真正启动的时机；<br>
+　　2、start transaction with consistent snapshot 命令。执行这个命令后，就会马上启动事务。<br></p>
+<h3 id="read-view-在-mvcc-里是如何工作的">Read View 在 MVCC 里是如何工作的
+</h3><p><img src="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124008.png"
+	width="2090"
+	height="928"
+	srcset="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124008_hu13725502383019347558.png 480w, /p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124008_hu5450314122915676930.png 1024w"
+	loading="lazy"
+	
+	
+		class="gallery-image" 
+		data-flex-grow="225"
+		data-flex-basis="540px"
+	
+></p>
+<p><img src="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124009.png"
+	width="1644"
+	height="578"
+	srcset="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124009_hu14220130770810032196.png 480w, /p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124009_hu16050616312562791359.png 1024w"
+	loading="lazy"
+	
+	
+		class="gallery-image" 
+		data-flex-grow="284"
+		data-flex-basis="682px"
+	
+></p>
+<h3 id="读提交-是如何工作的">读提交 是如何工作的
+</h3><p>Read Committed：在事务中每一次执行快照读时生成 ReadView。<br></p>
+<p><img src="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124010.png"
+	width="2044"
+	height="574"
+	srcset="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124010_hu11239117273631099353.png 480w, /p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124010_hu9802182562701191920.png 1024w"
+	loading="lazy"
+	
+		alt="读提交"
+	
+	
+		class="gallery-image" 
+		data-flex-grow="356"
+		data-flex-basis="854px"
+	
+></p>
+<p>两次快照读读取的是哪个版本?<br></p>
+<p><img src="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124011.png"
+	width="2272"
+	height="952"
+	srcset="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124011_hu16823463477137662782.png 480w, /p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124011_hu5445560398284656929.png 1024w"
+	loading="lazy"
+	
+		alt="第一次快照读"
+	
+	
+		class="gallery-image" 
+		data-flex-grow="238"
+		data-flex-basis="572px"
+	
+></p>
+<p><img src="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124012.png"
+	width="2274"
+	height="948"
+	srcset="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124012_hu14346948203209746577.png 480w, /p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124012_hu7807984587135732415.png 1024w"
+	loading="lazy"
+	
+		alt="第二次快照读"
+	
+	
+		class="gallery-image" 
+		data-flex-grow="239"
+		data-flex-basis="575px"
+	
+></p>
+<p>Read View 如何解决脏读？<br>
+　　在 RC 级别下，每次执行 select 都会生成一个新的 Read View。<br>
+　　如果另一个事务还没提交，它的 trx_id 必定在当前生成的 Read View 的 m_ids（活跃列表）里。<br>
+　　根据判定规则，该版本不可见。<br>
+　　只能去 undo log 里找上一个已经提交的历史版本。<br>
+　　因此，绝不可能读到未提交的数据，脏读被解决。<br></p>
+<h3 id="可重复读-是如何工作的">可重复读 是如何工作的
+</h3><p>Repeatable Read：仅在事务中第一次执行快照读时生成 ReadView，后续复用该 ReadView。<br></p>
+<p><img src="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124013.png"
+	width="2376"
+	height="676"
+	srcset="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124013_hu1791355786463300011.png 480w, /p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261124013_hu15942227246827253642.png 1024w"
+	loading="lazy"
+	
+		alt="可重复读"
+	
+	
+		class="gallery-image" 
+		data-flex-grow="351"
+		data-flex-basis="843px"
+	
+></p>
+<p>Read View 如何解决不可重复读？<br>
+　　在 RR 级别下，只在事务内第一次执行 select 时生成 Read View，后续复用该 ReadView。<br>
+　　假设事务 A 第一次读生成了 Read View。随后事务 B 修改数据并提交了。<br>
+　　事务 A 再次 select 时，用的还是旧的那个 Read View。<br>
+　　对于事务 B 的修改（trx_id 在旧的 m_ids 里），判定为不可见。<br>
+　　所以事务 A 每次读到的数据都完全相同，不可重复读被解决。<br></p>
+<h3 id="可重复读-避免幻读">可重复读 避免幻读
+</h3><p>Read View它是如何解决脏读、不可重复读、幻读问题的
+Read View 如何解决幻读（仅限于 RR 级别）？</p>
+<p>幻读：同一个事务内，两次查询符合条件的数据行数不一样（因为中间别的事务插入或删除了数据）。</p>
+<p>解决原理：
+快照读（普通 SELECT）：因为 RR 级别复用了第一次的 Read View，新插入的数据（trx_id 往往大于旧 Read View 的 max_trx_id）判定为不可见，所以你在快照里看不到新插入的行，解决了快照读的幻读。</p>
+<p>当前读（SELECT &hellip; FOR UPDATE / UPDATE / DELETE）：由于 Read View 对当前读无效，RR 级别下 InnoDB 使用了 Next-Key Lock（记录锁 + 间隙锁）。当你执行当前读时，不仅锁住现有的记录，还锁住记录之间的“间隙”，直接阻止其他事务在间隙里插入新数据。两者结合，RR 级别彻底解决了幻读。</p>
+<p>可重复读隔离级别解决幻读了吗<br></p>
+<p>可重复读隔离级别执行Update会发生什么<br></p>
+<hr>
+<h2 id="锁篇">锁篇
+</h2><p>MySQL中的锁有哪些？</p>
+<p>讲一下全局锁、表级锁、行级锁</p>
+<p>表级锁都有哪些锁，分别讲一下</p>
+<p>行级锁都有哪些锁，分别讲一下</p>
+<p>记录锁+间隙锁可以防止删除操作而导致的幻读吗</p>
+<p>MySQL死锁了怎么办？</p>
+<hr>
+<h2 id="日志篇">日志篇
+</h2><p>介绍下MySQL中三种日志及作用</p>
+<p>undo log字段结构，是如何回滚的？</p>
+<p>redo log什么时候刷盘</p>
+<p>redo log写满了怎么办</p>
+<p>redo log和binlog区别</p>
+<p>主从复制的实现方法</p>
+<p>binlog什么时候刷盘</p>
+<p>update 语句的执行过程</p>
+<p>update为什么要两阶段提交，讲一下两阶段提交的过程</p>
+<p>提交时异常重启会发生什么问题</p>
+<p>MySQL的I/O很高，如何优化</p>
+<hr>
+<h2 id="内存篇">内存篇
+</h2><p>什么是Buffer Pool</p>
+<p>为什么要有Buffer Pool</p>
+<p>Buffer Pool的结构</p>
+<p>如何管理Buffer Pool</p>
+<hr>
+<h2 id="引擎篇">引擎篇
+</h2><p>讲一下你对MySQL引擎的了解，并说出常见的引擎</p>
+<p>InnoDB和MyISAM的区别</p>
+<p>InnoDB 引擎的底层架构</p>
+<p>两个引擎的使用场景，如何选择</p>
+<hr>
+<h2 id="mvcc-篇">MVCC 篇
+</h2><p>什么是MVCC，解决了什么问题</p>
+<p>MVCC是如何实现的</p>
+<p>什么是当前读和快照读</p>
+<p>Read View的可见性规则</p>
+<p>回滚的流程的什么样的</p>
+<p>RC和RR隔离界别下MVCC区别</p>
 <hr>
 
 </section>
