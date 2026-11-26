@@ -10,7 +10,7 @@
 <meta property='og:description' content="基础篇 增删改查的语法 增： 1 2 3 4 5 6 7 8 9 10 11 12 -- 给指定字段添加数据 insert into 表名 (字段名1, 字段名2, ...) values (值1, 值2, ...); -- 给指定字段批量添加数">
 <meta property='og:url' content='https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/'>
 <meta property='og:site_name' content='CY1218-coder'>
-<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:published_time' content='2026-10-01T21:32:35&#43;08:00'/><meta property='article:modified_time' content='2026-11-26T16:56:09&#43;08:00'/>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:published_time' content='2026-10-01T21:32:35&#43;08:00'/><meta property='article:modified_time' content='2026-11-26T22:22:32&#43;08:00'/>
 <meta name="twitter:title" content="MySQL核心知识">
 <meta name="twitter:description" content="基础篇 增删改查的语法 增： 1 2 3 4 5 6 7 8 9 10 11 12 -- 给指定字段添加数据 insert into 表名 (字段名1, 字段名2, ...) values (值1, 值2, ...); -- 给指定字段批量添加数">
     <link rel="shortcut icon" href="/favicon.ico" />
@@ -365,7 +365,14 @@
           </ol>
         </li>
         <li><a href="#记录锁间隙锁可以防止删除操作而导致的幻读吗">记录锁+间隙锁可以防止删除操作而导致的幻读吗?</a></li>
-        <li><a href="#mysql-死锁了怎么办">MySQL 死锁了怎么办？</a></li>
+        <li><a href="#mysql-死锁了怎么办">MySQL 死锁了怎么办？</a>
+          <ol>
+            <li><a href="#死锁的发生">死锁的发生</a></li>
+            <li><a href="#为什么发生死锁">为什么发生死锁</a></li>
+            <li><a href="#insert-语句如何加行级锁">Insert 语句如何加行级锁</a></li>
+            <li><a href="#如何避免死锁">如何避免死锁？</a></li>
+          </ol>
+        </li>
       </ol>
     </li>
     <li><a href="#日志篇">日志篇</a></li>
@@ -436,7 +443,7 @@
 
 
 
-                <time class="article-time--modified" datetime="2026-11-26T16:56:09&#43;08:00">最后更新于 2026-11-26</time>
+                <time class="article-time--modified" datetime="2026-11-26T22:22:32&#43;08:00">最后更新于 2026-11-26</time>
             </div>
         
 
@@ -2402,7 +2409,180 @@ InnoDB 引擎通过什么技术来保证事务的这四个特性：<br>
 　　有一点要注意的是，在执行 update、delete、select … for update 等具有加锁性质的语句，一定要检查语句是否走了索引，如果是全表扫描的话，会对每一个索引加 next-key 锁，相当于把整个表锁住了，这是挺严重的问题。<br>
 　　（具体可见事务篇的 3.9可重复读避免幻读）<br></p>
 <h3 id="mysql-死锁了怎么办">MySQL 死锁了怎么办？
-</h3><hr>
+</h3><p>死锁定义： 两个或多个事务，各自持有对方需要的锁，同时又都在等待对方释放锁；大家互相等待、谁都不肯释放已持有的锁，形成循环等待，所有事务都无法继续往下执行，这个状态就是死锁。</p>
+<h4 id="死锁的发生">死锁的发生
+</h4><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="c1">-- 本次案例使用存储引擎 Innodb
+</span></span></span><span class="line"><span class="cl"><span class="c1">-- 隔离级别为 可重复读（RR）
+</span></span></span><span class="line"><span class="cl"><span class="c1">-- 建了一张订单表
+</span></span></span><span class="line"><span class="cl"><span class="c1">-- 其中 id 字段为主键索引
+</span></span></span><span class="line"><span class="cl"><span class="c1">-- order_no 字段普通索引，也就是非唯一索引：
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="s1">&#39;t_order&#39;</span><span class="w"> </span><span class="p">(</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="s1">&#39;id&#39;</span><span class="w"> </span><span class="nb">int</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="n">auto_increment</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="s1">&#39;order_no&#39;</span><span class="w"> </span><span class="nb">int</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="s1">&#39;create_date&#39;</span><span class="w"> </span><span class="n">datetime</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">primary</span><span class="w"> </span><span class="k">key</span><span class="w"> </span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">),</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">key</span><span class="w"> </span><span class="s1">&#39;index_order&#39;</span><span class="w"> </span><span class="p">(</span><span class="s1">&#39;order_no&#39;</span><span class="p">)</span><span class="w"> </span><span class="k">using</span><span class="w"> </span><span class="n">btree</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">)</span><span class="w"> </span><span class="n">engine</span><span class="o">=</span><span class="n">innodb</span><span class="w"> </span><span class="p">;</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>开始 t_order 表里已经有了 6 条记录</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th style="text-align:center">id</th>
+<th style="text-align:center">order_no</th>
+<th style="text-align:center">create_date</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1001</td>
+<td style="text-align:center">2021-12-28 13:59:07</td>
+</tr>
+<tr>
+<td style="text-align:center">2</td>
+<td style="text-align:center">1002</td>
+<td style="text-align:center">2021-12-28 13:59:14</td>
+</tr>
+<tr>
+<td style="text-align:center">3</td>
+<td style="text-align:center">1003</td>
+<td style="text-align:center">2021-12-28 13:59:21</td>
+</tr>
+<tr>
+<td style="text-align:center">4</td>
+<td style="text-align:center">1004</td>
+<td style="text-align:center">2021-12-28 13:59:30</td>
+</tr>
+<tr>
+<td style="text-align:center">5</td>
+<td style="text-align:center">1005</td>
+<td style="text-align:center">2021-12-28 13:59:36</td>
+</tr>
+<tr>
+<td style="text-align:center">6</td>
+<td style="text-align:center">1006</td>
+<td style="text-align:center">2021-12-28 14:24:33</td>
+</tr>
+</tbody>
+</table></div>
+<p>假设这时有两事务，一个事务要插入订单 1007，另外一个事务要插入订单 1008<br>
+因为需要对订单做幂等性校验，所以两个事务先要查询该订单是否存在，不存在才插入记录</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th style="text-align:center">事务 A</th>
+<th style="text-align:center">事务 B</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">begin;</td>
+<td style="text-align:center">begin;</td>
+</tr>
+<tr>
+<td style="text-align:center">检查 1007 订单是否存在<br><code>select id from t_order</code><br><code>where order_no = 1007 for update;</code></td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center"></td>
+<td style="text-align:center">检查 1008 订单是否存在<br><code>select id from t_order</code><br><code>where order_no = 1008 for update;</code></td>
+</tr>
+<tr>
+<td style="text-align:center">如果没有，则插入订单记录<br><code>insert into t_order (order_no, create_date) values (1007, now());</code><br>阻塞等待&hellip;.</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center"></td>
+<td style="text-align:center">如果没有，则插入订单记录<br><code>insert into t_order (order_no, create_date) values (1008, now());</code><br>阻塞等待&hellip;.</td>
+</tr>
+</tbody>
+</table></div>
+<p>两个事务都陷入了等待状态，也就是发生了死锁，因为都在相互等待对方释放锁。这里在查询记录是否存在的时候，使用了 select &hellip; for update 语句，目的为了防止事务执行的过程中，有其他事务插入了记录，而出现幻读的问题。如果没有使用 select &hellip; for update 语句，而使用了单纯的 select 语句，如果是两个订单号一样的请求同时进来，就会出现两个重复的订单，有可能出现幻读</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th style="text-align:center">事务 A</th>
+<th style="text-align:center">事务 B</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">begin;</td>
+<td style="text-align:center">begin;</td>
+</tr>
+<tr>
+<td style="text-align:center">检查 1007 订单是否存在<br><code>select id from t_order</code><br><code>where order_no = 1007</code></td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center"></td>
+<td style="text-align:center">检查 1007 订单是否存在<br><code>select id from t_order</code><br><code>where order_no = 1007</code></td>
+</tr>
+<tr>
+<td style="text-align:center">如果没有，则插入订单记录<br><code>insert into t_order (order_no, create_date) values (1007, now());</code></td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center"></td>
+<td style="text-align:center">如果没有，则插入订单记录<br><code>insert into t_order (order_no, create_date) values (1007, now());</code></td>
+</tr>
+<tr>
+<td style="text-align:center">commit;</td>
+<td style="text-align:center">commit;</td>
+</tr>
+</tbody>
+</table></div>
+<p>存在两条订单为 1007 的记录（幻读）</p>
+<h4 id="为什么发生死锁">为什么发生死锁
+</h4><p><img src="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126013.png"
+	width="1980"
+	height="834"
+	srcset="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126013_hu2159447092032661961.png 480w, /p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126013_hu9662104371795128445.png 1024w"
+	loading="lazy"
+	
+	
+		class="gallery-image" 
+		data-flex-grow="237"
+		data-flex-basis="569px"
+	
+></p>
+<p>　　这里可以参考 4.5.5 非唯一索引等值查询的记录不存在时，加间隙锁。<br></p>
+<p>　　间隙锁的意义只在于阻止区间被插入，因此是可以共存的。一个事务获取的间隙锁不会阻止另一个事务获取同一个间隙范围的间隙锁，共享和排他的间隙锁是没有区别的，他们相互不冲突，且功能相同，即两个事务可以同时持有包含共同间隙的间隙锁。<br>
+　　但是有一点要注意，临键锁是包含间隙锁+记录锁的，如果一个事务获取了 X 型的临键锁，那么另外一个事务在获取相同范围的 X 型的临键锁时，是会被阻塞的。<br></p>
+<p>　　插入意向锁不是意向锁，它是一种特殊的间隙锁。插入意向锁是一种特殊的间隙锁，但不同于间隙锁的是，该锁只用于并发插入操作。如果说间隙锁锁住的是一个区间，那么插入意向锁锁住的就是一个点。<br></p>
+<h4 id="insert-语句如何加行级锁">Insert 语句如何加行级锁
+</h4><h4 id="如何避免死锁">如何避免死锁？
+</h4><p>死锁的四个必要条件<br>
+　　1、互斥条件：一段时间内，进程分配到的资源只能被自己占用，如果有其他进程此时请求该资源，则请求进程只能等待。<br>
+　　2、请求和保持条件：进程已经保持了至少一个资源，但又提出了新的资源请求，而该资源已被其他进程占有，此时请求进程被阻塞，但是对已有资源保持不放。<br>
+　　3、不可抢占条件：进程已获得的资源在未使用完之前不能被抢占，只能在进程使用完时由自己释放。<br>
+　　4、循环等待条件：发生死锁时必然存在一个进程－资源的循环链，P1等P2资源，P2等P3……<br></p>
+<p>在数据库层面，有两种策略通过打破 循环等待条件 来解除死锁状态：<br>
+　　1、设置事务等待锁的超时时间。当一个事务的等待时间超过该值后，就对这个事务进行回滚，于是锁就释放了，另一个事务就可以继续执行了。在 InnoDB 中，参数 innodb_lock_wait_timeout 是用来设置超时时间的，默认值时 50 秒。当发生超时后，就出现下面这个提示：<br>
+　　ERROR 1205 (HY000): Lock wait timeout exceeded; try restarting transaction <br>
+　　2、开启主动死锁检测。主动死锁检测在发现死锁后，主动回滚死锁链条中的某一个事务，让其他事务得以继续执行。将参数 innodb_deadlock_detect 设置为 on，表示开启这个逻辑，默认就开启。当检测到死锁后，就会出现下面这个提示：<br>
+　　ERROR 1213 (40001): Deadlock found when trying to get lock; try restarting transaction <br>
+上面这两种策略是 当有死锁发生时 的避免方式。<br></p>
+<p>我们可以回归业务的角度来 预防死锁，对订单做幂等性校验的目的是为了保证不会出现重复的订单，那我们可以直接将 order_no 字段设置为唯一索引列，利用它的唯一性来保证订单表不会出现重复的订单，不过有一点不好的地方就是在我们插入一个已经存在的订单记录时就会抛出异常。<br></p>
+<hr>
 <h2 id="日志篇">日志篇
 </h2><p>介绍下MySQL中三种日志及作用</p>
 <p>undo log字段结构，是如何回滚的？</p>

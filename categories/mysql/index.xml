@@ -1963,7 +1963,180 @@ InnoDB 引擎通过什么技术来保证事务的这四个特性：&lt;br&gt;
 　　有一点要注意的是，在执行 update、delete、select … for update 等具有加锁性质的语句，一定要检查语句是否走了索引，如果是全表扫描的话，会对每一个索引加 next-key 锁，相当于把整个表锁住了，这是挺严重的问题。&lt;br&gt;
 　　（具体可见事务篇的 3.9可重复读避免幻读）&lt;br&gt;&lt;/p&gt;
 &lt;h3 id=&#34;mysql-死锁了怎么办&#34;&gt;MySQL 死锁了怎么办？
-&lt;/h3&gt;&lt;hr&gt;
+&lt;/h3&gt;&lt;p&gt;死锁定义： 两个或多个事务，各自持有对方需要的锁，同时又都在等待对方释放锁；大家互相等待、谁都不肯释放已持有的锁，形成循环等待，所有事务都无法继续往下执行，这个状态就是死锁。&lt;/p&gt;
+&lt;h4 id=&#34;死锁的发生&#34;&gt;死锁的发生
+&lt;/h4&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sql&#34; data-lang=&#34;sql&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;-- 本次案例使用存储引擎 Innodb
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;-- 隔离级别为 可重复读（RR）
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;-- 建了一张订单表
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;-- 其中 id 字段为主键索引
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;-- order_no 字段普通索引，也就是非唯一索引：
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;create&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;k&#34;&gt;table&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;t_order&amp;#39;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;id&amp;#39;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;int&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;k&#34;&gt;not&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;k&#34;&gt;null&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;n&#34;&gt;auto_increment&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;order_no&amp;#39;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;int&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;k&#34;&gt;default&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;k&#34;&gt;null&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;create_date&amp;#39;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;n&#34;&gt;datetime&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;k&#34;&gt;default&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;k&#34;&gt;null&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;k&#34;&gt;primary&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;k&#34;&gt;key&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;id&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;k&#34;&gt;key&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;index_order&amp;#39;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;order_no&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;k&#34;&gt;using&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;n&#34;&gt;btree&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;n&#34;&gt;engine&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;innodb&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;开始 t_order 表里已经有了 6 条记录&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;id&lt;/th&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;order_no&lt;/th&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;create_date&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;1&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;1001&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;2021-12-28 13:59:07&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;2&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;1002&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;2021-12-28 13:59:14&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;3&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;1003&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;2021-12-28 13:59:21&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;4&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;1004&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;2021-12-28 13:59:30&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;5&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;1005&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;2021-12-28 13:59:36&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;6&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;1006&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;2021-12-28 14:24:33&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;假设这时有两事务，一个事务要插入订单 1007，另外一个事务要插入订单 1008&lt;br&gt;
+因为需要对订单做幂等性校验，所以两个事务先要查询该订单是否存在，不存在才插入记录&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;事务 A&lt;/th&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;事务 B&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;begin;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;begin;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;检查 1007 订单是否存在&lt;br&gt;&lt;code&gt;select id from t_order&lt;/code&gt;&lt;br&gt;&lt;code&gt;where order_no = 1007 for update;&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;检查 1008 订单是否存在&lt;br&gt;&lt;code&gt;select id from t_order&lt;/code&gt;&lt;br&gt;&lt;code&gt;where order_no = 1008 for update;&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;如果没有，则插入订单记录&lt;br&gt;&lt;code&gt;insert into t_order (order_no, create_date) values (1007, now());&lt;/code&gt;&lt;br&gt;阻塞等待&amp;hellip;.&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;如果没有，则插入订单记录&lt;br&gt;&lt;code&gt;insert into t_order (order_no, create_date) values (1008, now());&lt;/code&gt;&lt;br&gt;阻塞等待&amp;hellip;.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;两个事务都陷入了等待状态，也就是发生了死锁，因为都在相互等待对方释放锁。这里在查询记录是否存在的时候，使用了 select &amp;hellip; for update 语句，目的为了防止事务执行的过程中，有其他事务插入了记录，而出现幻读的问题。如果没有使用 select &amp;hellip; for update 语句，而使用了单纯的 select 语句，如果是两个订单号一样的请求同时进来，就会出现两个重复的订单，有可能出现幻读&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;事务 A&lt;/th&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;事务 B&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;begin;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;begin;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;检查 1007 订单是否存在&lt;br&gt;&lt;code&gt;select id from t_order&lt;/code&gt;&lt;br&gt;&lt;code&gt;where order_no = 1007&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;检查 1007 订单是否存在&lt;br&gt;&lt;code&gt;select id from t_order&lt;/code&gt;&lt;br&gt;&lt;code&gt;where order_no = 1007&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;如果没有，则插入订单记录&lt;br&gt;&lt;code&gt;insert into t_order (order_no, create_date) values (1007, now());&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;如果没有，则插入订单记录&lt;br&gt;&lt;code&gt;insert into t_order (order_no, create_date) values (1007, now());&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;commit;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;commit;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;存在两条订单为 1007 的记录（幻读）&lt;/p&gt;
+&lt;h4 id=&#34;为什么发生死锁&#34;&gt;为什么发生死锁
+&lt;/h4&gt;&lt;p&gt;&lt;img src=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126013.png&#34;
+	width=&#34;1980&#34;
+	height=&#34;834&#34;
+	srcset=&#34;https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126013_hu2159447092032661961.png 480w, https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126013_hu9662104371795128445.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;237&#34;
+		data-flex-basis=&#34;569px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;　　这里可以参考 4.5.5 非唯一索引等值查询的记录不存在时，加间隙锁。&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;　　间隙锁的意义只在于阻止区间被插入，因此是可以共存的。一个事务获取的间隙锁不会阻止另一个事务获取同一个间隙范围的间隙锁，共享和排他的间隙锁是没有区别的，他们相互不冲突，且功能相同，即两个事务可以同时持有包含共同间隙的间隙锁。&lt;br&gt;
+　　但是有一点要注意，临键锁是包含间隙锁+记录锁的，如果一个事务获取了 X 型的临键锁，那么另外一个事务在获取相同范围的 X 型的临键锁时，是会被阻塞的。&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;　　插入意向锁不是意向锁，它是一种特殊的间隙锁。插入意向锁是一种特殊的间隙锁，但不同于间隙锁的是，该锁只用于并发插入操作。如果说间隙锁锁住的是一个区间，那么插入意向锁锁住的就是一个点。&lt;br&gt;&lt;/p&gt;
+&lt;h4 id=&#34;insert-语句如何加行级锁&#34;&gt;Insert 语句如何加行级锁
+&lt;/h4&gt;&lt;h4 id=&#34;如何避免死锁&#34;&gt;如何避免死锁？
+&lt;/h4&gt;&lt;p&gt;死锁的四个必要条件&lt;br&gt;
+　　1、互斥条件：一段时间内，进程分配到的资源只能被自己占用，如果有其他进程此时请求该资源，则请求进程只能等待。&lt;br&gt;
+　　2、请求和保持条件：进程已经保持了至少一个资源，但又提出了新的资源请求，而该资源已被其他进程占有，此时请求进程被阻塞，但是对已有资源保持不放。&lt;br&gt;
+　　3、不可抢占条件：进程已获得的资源在未使用完之前不能被抢占，只能在进程使用完时由自己释放。&lt;br&gt;
+　　4、循环等待条件：发生死锁时必然存在一个进程－资源的循环链，P1等P2资源，P2等P3……&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;在数据库层面，有两种策略通过打破 循环等待条件 来解除死锁状态：&lt;br&gt;
+　　1、设置事务等待锁的超时时间。当一个事务的等待时间超过该值后，就对这个事务进行回滚，于是锁就释放了，另一个事务就可以继续执行了。在 InnoDB 中，参数 innodb_lock_wait_timeout 是用来设置超时时间的，默认值时 50 秒。当发生超时后，就出现下面这个提示：&lt;br&gt;
+　　ERROR 1205 (HY000): Lock wait timeout exceeded; try restarting transaction &lt;br&gt;
+　　2、开启主动死锁检测。主动死锁检测在发现死锁后，主动回滚死锁链条中的某一个事务，让其他事务得以继续执行。将参数 innodb_deadlock_detect 设置为 on，表示开启这个逻辑，默认就开启。当检测到死锁后，就会出现下面这个提示：&lt;br&gt;
+　　ERROR 1213 (40001): Deadlock found when trying to get lock; try restarting transaction &lt;br&gt;
+上面这两种策略是 当有死锁发生时 的避免方式。&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;我们可以回归业务的角度来 预防死锁，对订单做幂等性校验的目的是为了保证不会出现重复的订单，那我们可以直接将 order_no 字段设置为唯一索引列，利用它的唯一性来保证订单表不会出现重复的订单，不过有一点不好的地方就是在我们插入一个已经存在的订单记录时就会抛出异常。&lt;br&gt;&lt;/p&gt;
+&lt;hr&gt;
 &lt;h2 id=&#34;日志篇&#34;&gt;日志篇
 &lt;/h2&gt;&lt;p&gt;介绍下MySQL中三种日志及作用&lt;/p&gt;
 &lt;p&gt;undo log字段结构，是如何回滚的？&lt;/p&gt;
