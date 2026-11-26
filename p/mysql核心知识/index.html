@@ -10,7 +10,7 @@
 <meta property='og:description' content="基础篇 增删改查的语法 增： 1 2 3 4 5 6 7 8 9 10 11 12 -- 给指定字段添加数据 insert into 表名 (字段名1, 字段名2, ...) values (值1, 值2, ...); -- 给指定字段批量添加数">
 <meta property='og:url' content='https://CY1218-coder.github.io/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/'>
 <meta property='og:site_name' content='CY1218-coder'>
-<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:published_time' content='2026-10-01T21:32:35&#43;08:00'/><meta property='article:modified_time' content='2026-11-25T21:33:46&#43;08:00'/>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:published_time' content='2026-10-01T21:32:35&#43;08:00'/><meta property='article:modified_time' content='2026-11-26T16:56:09&#43;08:00'/>
 <meta name="twitter:title" content="MySQL核心知识">
 <meta name="twitter:description" content="基础篇 增删改查的语法 增： 1 2 3 4 5 6 7 8 9 10 11 12 -- 给指定字段添加数据 insert into 表名 (字段名1, 字段名2, ...) values (值1, 值2, ...); -- 给指定字段批量添加数">
     <link rel="shortcut icon" href="/favicon.ico" />
@@ -357,13 +357,15 @@
           <ol>
             <li><a href="#sql-语句如何加行级锁">SQL 语句如何加行级锁?</a></li>
             <li><a href="#mysql-如何加行级锁">MySQL 如何加行级锁?</a></li>
-            <li><a href="#唯一索引主键索引等值查询">唯一索引（主键索引）等值查询</a></li>
-            <li><a href="#唯一索引主键索引范围查询">唯一索引（主键索引）范围查询</a></li>
+            <li><a href="#唯一索引等值查询">唯一索引等值查询</a></li>
+            <li><a href="#唯一索引范围查询">唯一索引范围查询</a></li>
             <li><a href="#非唯一索引等值查询">非唯一索引等值查询</a></li>
             <li><a href="#非唯一索引范围查询">非唯一索引范围查询</a></li>
             <li><a href="#没有加索引的查询">没有加索引的查询</a></li>
           </ol>
         </li>
+        <li><a href="#记录锁间隙锁可以防止删除操作而导致的幻读吗">记录锁+间隙锁可以防止删除操作而导致的幻读吗?</a></li>
+        <li><a href="#mysql-死锁了怎么办">MySQL 死锁了怎么办？</a></li>
       </ol>
     </li>
     <li><a href="#日志篇">日志篇</a></li>
@@ -434,7 +436,7 @@
 
 
 
-                <time class="article-time--modified" datetime="2026-11-25T21:33:46&#43;08:00">最后更新于 2026-11-25</time>
+                <time class="article-time--modified" datetime="2026-11-26T16:56:09&#43;08:00">最后更新于 2026-11-26</time>
             </div>
         
 
@@ -2221,16 +2223,186 @@ InnoDB 引擎通过什么技术来保证事务的这四个特性：<br>
 </h4><p>　　行级锁加锁规则比较复杂，不同的场景，加锁的形式是不同的。<br>
 　　加锁的对象是索引，加锁的基本单位是临键锁（Next‑Key Lock），它是由记录锁和间隙锁组合而成的，临键锁是前开后闭区间，而间隙锁是前开后开区间。<br>
 　　但是，临键锁在一些场景下会退化成记录锁或间隙锁。在能使用记录锁或者间隙锁就能避免幻读现象的场景下，临键锁就会退化成记录锁或间隙锁。<br></p>
-<h4 id="唯一索引主键索引等值查询">唯一索引（主键索引）等值查询
-</h4><p>　　当查询的记录是 存在 的，在索引树上定位到这一条记录后，该记录的索引中的临键锁会退化成 记录锁 。<br>
-　　当查询的记录是 不存在 的，在索引树找到第一条大于该查询记录的记录后，该记录的索引中的临键锁会退化成 间隙锁 。<br></p>
-<h4 id="唯一索引主键索引范围查询">唯一索引（主键索引）范围查询
-</h4><h4 id="非唯一索引等值查询">非唯一索引等值查询
-</h4><h4 id="非唯一索引范围查询">非唯一索引范围查询
-</h4><h4 id="没有加索引的查询">没有加索引的查询
-</h4><p>记录锁+间隙锁可以防止删除操作而导致的幻读吗</p>
-<p>MySQL死锁了怎么办？</p>
-<hr>
+<h4 id="唯一索引等值查询">唯一索引等值查询
+</h4><p>1、当查询的记录是 存在 的，在索引树上定位到这一条记录后，该记录的索引中的临键锁会退化成 记录锁 。<br>
+2、当查询的记录是 不存在 的，在索引树找到第一条大于该查询记录的记录后，该记录的索引中的临键锁会退化成 间隙锁 。<br></p>
+<p>例子一（唯一索引等值查询的记录存在）：<br></p>
+<p><img src="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126001.png"
+	width="1240"
+	height="752"
+	srcset="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126001_hu711030606604221793.png 480w, /p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126001_hu9345606326535244689.png 1024w"
+	loading="lazy"
+	
+	
+		class="gallery-image" 
+		data-flex-grow="164"
+		data-flex-basis="395px"
+	
+></p>
+<p>为什么唯一索引等值查询并且查询记录存在的场景下，该记录的索引中的临键锁会退化成记录锁？<br>
+　　原因就是在唯一索引等值查询并且查询记录存在的场景下，仅靠记录锁也能避免幻读的问题。幻读的定义就是，当一个事务前后两次查询的结果集，不相同时，就认为发生幻读。所以，要避免幻读就是避免结果集某一条记录被其他事务删除，或者有其他事务插入了一条新记录，这样前后两次查询的结果集就不会出现不相同的情况。由于主键具有唯一性，所以其他事务插入 id = 1 的时候，会因为主键冲突，导致无法插入 id = 1 的新记录。这样事务 A 在多次查询 id = 1 的记录的时候，不会出现前后两次查询的结果集不同，也就避免了幻读的问题。由于对 id = 1 加了记录锁，其他事务无法删除该记录，这样事务 A 在多次查询 id = 1 的记录的时候，不会出现前后两次查询的结果集不同，也就避免了幻读的问题。<br></p>
+<p>例子二（唯一索引等值查询的记录不存在）：<br></p>
+<p><img src="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126002.png"
+	width="1426"
+	height="794"
+	srcset="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126002_hu8675022682683982074.png 480w, /p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126002_hu1781544577266831397.png 1024w"
+	loading="lazy"
+	
+	
+		class="gallery-image" 
+		data-flex-grow="179"
+		data-flex-basis="431px"
+	
+></p>
+<p>为什么唯一索引等值查询并且查询记录不存在的场景下，在索引树找到第一条大于该查询记录的记录后，要将该记录的索引中的临键锁会退化成间隙锁？<br>
+　　原因就是在唯一索引等值查询并且查询记录不存在的场景下，仅靠间隙锁就能避免幻读的问题。<br></p>
+<p>为什么 id = 5 记录上的主键索引的锁不可以是临键锁？<br>
+　　如果是临键锁，就意味着其他事务无法删除 id = 5 这条记录，但是这次的案例是查询 id = 2 的记录，只要保证前后两次查询 id = 2 的结果集相同，就能避免幻读的问题了，所以即使 id = 5 被删除，也不会有什么影响，那就没必要加临键锁，因此只需要在 id = 5 加间隙锁，避免其他事务插入 id = 2 的新记录就行了。<br></p>
+<p>为什么不可以针对不存在的记录加记录锁？<br>
+　　锁是加在索引上的，而这个场景下查询的记录是不存在的，自然就没办法锁住这条不存在的记录。<br></p>
+<h4 id="唯一索引范围查询">唯一索引范围查询
+</h4><p>当唯一索引进行范围查询时，会对每一个扫描到的索引加临键锁，遇到以下情况，会退化成记录锁或间隙锁：<br>
+1、 ≥ 的范围查询，如果等值查询的记录存在于表中，那么该记录的索引中的临键锁会退化成记录锁。<br>
+2、 &lt; ≤ 的范围查询，如果等值查询的记录不存在于表中，那么该记录的索引中的临键锁会退化成间隙锁。<br>
+3、 &lt; 的范围查询，如果等值查询的记录存在于表中，那么该记录的索引中的临键锁会退化成间隙锁。<br></p>
+<p><img src="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126003.png"
+	width="1922"
+	height="1254"
+	srcset="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126003_hu16822112710305907095.png 480w, /p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126003_hu18032318401685959085.png 1024w"
+	loading="lazy"
+	
+	
+		class="gallery-image" 
+		data-flex-grow="153"
+		data-flex-basis="367px"
+	
+></p>
+<p><img src="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126004.png"
+	width="1748"
+	height="1216"
+	srcset="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126004_hu8091256317095004106.png 480w, /p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126004_hu9531261472676249752.png 1024w"
+	loading="lazy"
+	
+	
+		class="gallery-image" 
+		data-flex-grow="143"
+		data-flex-basis="345px"
+	
+></p>
+<p><img src="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126005.png"
+	width="1750"
+	height="1232"
+	srcset="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126005_hu5542415705999545615.png 480w, /p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126005_hu11422447739936969598.png 1024w"
+	loading="lazy"
+	
+	
+		class="gallery-image" 
+		data-flex-grow="142"
+		data-flex-basis="340px"
+	
+></p>
+<p><img src="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126006.png"
+	width="2118"
+	height="954"
+	srcset="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126006_hu13351492181592350046.png 480w, /p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126006_hu16928576927698892145.png 1024w"
+	loading="lazy"
+	
+	
+		class="gallery-image" 
+		data-flex-grow="222"
+		data-flex-basis="532px"
+	
+></p>
+<p><img src="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126007.png"
+	width="1930"
+	height="1160"
+	srcset="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126007_hu1431897367359571071.png 480w, /p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126007_hu3198704526008522536.png 1024w"
+	loading="lazy"
+	
+	
+		class="gallery-image" 
+		data-flex-grow="166"
+		data-flex-basis="399px"
+	
+></p>
+<h4 id="非唯一索引等值查询">非唯一索引等值查询
+</h4><p>　　用非唯一索引进行等值查询的时候，因为存在两个索引，一个是唯一索引（主键索引），一个是非唯一索引（二级索引），所以在加锁时，同时会对这两个索引都加锁，但是对主键索引加锁的时候，只有满足查询条件的记录才会对它们的主键索引加锁。<br>
+　　1、当查询的记录存在时，由于不是唯一索引，所以肯定存在索引值相同的记录，于是非唯一索引等值查询的过程是一个扫描的过程，直到扫描到第一个不符合条件的二级索引记录就停止扫描，然后在扫描的过程中，对扫描到的二级索引记录加的是临键锁，而对于第一个不符合条件的二级索引记录，该二级索引的临键锁会退化成间隙锁。同时，在符合查询条件的记录的主键索引上加记录锁。<br>
+　　2、当查询的记录不存在时，扫描到第一条不符合条件的二级索引记录，该二级索引的临键锁会退化成间隙锁。因为不存在满足查询条件的记录，所以不会对主键索引加锁。<br></p>
+<p>例子一（非唯一索引等值查询的记录存在）：<br></p>
+<p><img src="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126009.png"
+	width="1752"
+	height="1028"
+	srcset="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126009_hu16014360423425089613.png 480w, /p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126009_hu10556878660554004298.png 1024w"
+	loading="lazy"
+	
+	
+		class="gallery-image" 
+		data-flex-grow="170"
+		data-flex-basis="409px"
+	
+></p>
+<p><img src="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126010.png"
+	width="1752"
+	height="902"
+	srcset="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126010_hu12641739687089062116.png 480w, /p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126010_hu5652647128683355360.png 1024w"
+	loading="lazy"
+	
+	
+		class="gallery-image" 
+		data-flex-grow="194"
+		data-flex-basis="466px"
+	
+></p>
+<p><img src="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126011.png"
+	width="1752"
+	height="436"
+	srcset="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126011_hu9559365528666447908.png 480w, /p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126011_hu9705217484884445366.png 1024w"
+	loading="lazy"
+	
+	
+		class="gallery-image" 
+		data-flex-grow="401"
+		data-flex-basis="964px"
+	
+></p>
+<p>例子二（非唯一索引等值查询的记录不存在）：<br></p>
+<p><img src="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126008.png"
+	width="1748"
+	height="1236"
+	srcset="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126008_hu13989882450069698861.png 480w, /p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126008_hu1398602922887044310.png 1024w"
+	loading="lazy"
+	
+	
+		class="gallery-image" 
+		data-flex-grow="141"
+		data-flex-basis="339px"
+	
+></p>
+<h4 id="非唯一索引范围查询">非唯一索引范围查询
+</h4><p>非唯一索引进行范围查询时，对二级索引记录加锁都是加临键锁。<br></p>
+<p><img src="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126012.png"
+	width="1934"
+	height="1258"
+	srcset="/p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126012_hu16575037378462483928.png 480w, /p/mysql%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86/20261126012_hu3369142666276175730.png 1024w"
+	loading="lazy"
+	
+	
+		class="gallery-image" 
+		data-flex-grow="153"
+		data-flex-basis="368px"
+	
+></p>
+<h4 id="没有加索引的查询">没有加索引的查询
+</h4><p>　　如果锁定读查询语句，没有使用索引列作为查询条件，或者查询语句没有走索引查询，导致扫描是全表扫描。那么，每一条记录的索引上都会加临键锁，这样就相当于锁住的全表，这时如果其他事务对该表进行增、删、改操作的时候，都会被阻塞。<br>
+　　不只是锁定读查询语句不加索引才会导致这种情况，update 和 delete 语句如果查询条件不加索引，那么由于扫描的方式是全表扫描，于是就会对每一条记录的索引上都会加临键锁，这样就相当于锁住的全表。<br>
+　　因此，在线上在执行 update、delete、select &hellip; for update 等具有加锁性质的语句，一定要检查语句是否走了索引，如果是全表扫描的话，会对每一个索引加临键锁，相当于把整个表锁住了，这是个严重的问题。<br></p>
+<h3 id="记录锁间隙锁可以防止删除操作而导致的幻读吗">记录锁+间隙锁可以防止删除操作而导致的幻读吗?
+</h3><p>　　在 MySQL 的可重复读隔离级别下，针对当前读的语句会对索引加记录锁+间隙锁，这样可以避免其他事务执行增、删、改时导致幻读的问题。<br>
+　　有一点要注意的是，在执行 update、delete、select … for update 等具有加锁性质的语句，一定要检查语句是否走了索引，如果是全表扫描的话，会对每一个索引加 next-key 锁，相当于把整个表锁住了，这是挺严重的问题。<br>
+　　（具体可见事务篇的 3.9可重复读避免幻读）<br></p>
+<h3 id="mysql-死锁了怎么办">MySQL 死锁了怎么办？
+</h3><hr>
 <h2 id="日志篇">日志篇
 </h2><p>介绍下MySQL中三种日志及作用</p>
 <p>undo log字段结构，是如何回滚的？</p>
